@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-kt-chocolate: #3D2B1F;
+  --color-kt-champagne: #F7E7CE;
+  --color-kt-blush: #F5C2C1;
+  --color-kt-rouge: #C44D58;
+  --color-kt-emerald: #0B3D2E;
+
+  --font-serif: var(--font-playfair);
+  --font-sans: var(--font-dm-sans);
+  --font-display: var(--font-hanken);
+}
+
+:root {
+  --background: var(--color-kt-champagne);
+  --foreground: var(--color-kt-chocolate);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+}
