@@ -38,6 +38,7 @@ export default function Header() {
               <div className="absolute left-0 mt-0 w-56 bg-kt-champagne border border-kt-chocolate/10 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                 <div className="py-2 flex flex-col">
                   <Link href="/menu?category=Signature Puddings" className="px-4 py-3 text-kt-chocolate hover:bg-kt-chocolate hover:text-kt-champagne transition-colors">Signature Puddings</Link>
+                  <Link href="/menu?category=Artisan Cakes" className="px-4 py-3 text-kt-chocolate hover:bg-kt-chocolate hover:text-kt-champagne transition-colors">Artisan Cakes</Link>
                   <Link href="/menu?category=Southern Pies" className="px-4 py-3 text-kt-chocolate hover:bg-kt-chocolate hover:text-kt-champagne transition-colors">Southern Pies</Link>
                   <Link href="/menu?category=Cobblers" className="px-4 py-3 text-kt-chocolate hover:bg-kt-chocolate hover:text-kt-champagne transition-colors">Cobblers</Link>
                   <Link href="/menu?category=Cookies" className="px-4 py-3 text-kt-chocolate hover:bg-kt-chocolate hover:text-kt-champagne transition-colors">Cookies</Link>
