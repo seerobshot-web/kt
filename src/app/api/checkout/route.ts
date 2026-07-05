@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       port: parseInt(process.env.SMTP_PORT || '465'),
       secure: process.env.SMTP_PORT === '465' || !process.env.SMTP_PORT, // 465 is secure
       auth: {
-        user: process.env.SMTP_USER || 'no-reply@kingdomtreatzrva.com',
+        user: process.env.SMTP_USER || 'info@kingdomtreatzrva.com',
         pass: process.env.SMTP_PASS || 'placeholder_password',
       },
     });
@@ -50,8 +50,8 @@ export async function POST(request: Request) {
 
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; color: #4A3A35;">
-        <h2 style="color: #4A3A35;">New Order Request</h2>
-        <p>A new order request has been submitted from the website.</p>
+        <h2 style="color: #4A3A35;">New Website Order</h2>
+        <p>A new order has been submitted from the website.</p>
         
         <div style="background: #FFF9F2; padding: 20px; border-radius: 4px; margin-bottom: 20px;">
           <h3 style="margin-top: 0; color: #C24135;">Customer Details</h3>
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
           </tfoot>
         </table>
         
-        <p style="font-size: 12px; color: #888;">* Note: Payment has not been collected online. Please manually confirm this order and arrange payment.</p>
+        <p style="font-size: 12px; color: #888;">* Note: Confirm pickup details with the customer before preparing the order.</p>
       </div>
     `;
 
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
     const info = await transporter.sendMail({
       from: `"Kingdom Treatz System" <${process.env.SMTP_USER}>`, 
       to: "info@kingdomtreatzrva.com", 
-      subject: `New Order Request - ${data.name}`, 
+      subject: `New Website Order - ${data.name}`, 
       html: htmlContent, 
     });
 
@@ -104,6 +104,6 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error('Checkout API Error:', error);
-    return NextResponse.json({ error: 'Failed to dispatch order request' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to dispatch order email' }, { status: 500 });
   }
 }

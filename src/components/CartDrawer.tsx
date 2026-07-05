@@ -95,14 +95,14 @@ export default function CartDrawer() {
               <span className="font-serif font-bold text-2xl text-kt-chocolate">${subtotal.toFixed(2)}</span>
             </div>
             <p className="font-sans text-xs text-kt-chocolate/50 mb-4 text-center">
-              Payment is not collected today. We will confirm your order details manually.
+              Secure checkout is processed with Square. For questions, email info@kingdomtreatzrva.com.
             </p>
             <Link 
               href="/checkout" 
               onClick={() => setDrawerOpen(false)}
               className="block w-full py-4 bg-kt-chocolate text-kt-champagne text-center font-display text-sm tracking-wider uppercase rounded-sm hover:bg-kt-chocolate/90 transition-colors"
             >
-              Initiate Order Request
+              Checkout
             </Link>
           </div>
         )}

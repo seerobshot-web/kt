@@ -166,7 +166,7 @@ export default function CheckoutPage() {
         <CheckCircle2 className="w-20 h-20 text-kt-emerald mb-6" />
         <h1 className="font-serif text-4xl font-bold text-kt-chocolate mb-4 text-center">Your Royal Decree is Received</h1>
         <p className="font-sans text-lg text-kt-chocolate/80 max-w-lg text-center mb-8">
-          Thank you, {formData.name}! Your order request and payment have been received. We will contact you shortly to confirm pickup details.
+          Thank you, {formData.name}! Your order and payment have been received. We will contact you shortly to confirm pickup details.
         </p>
         <Link href="/" className="px-8 py-4 bg-kt-chocolate text-kt-champagne font-display tracking-wider text-sm uppercase rounded-sm hover:bg-kt-chocolate/90 transition-colors">
           Return Home
@@ -182,7 +182,7 @@ export default function CheckoutPage() {
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Menu
         </Link>
 
-        <h1 className="font-serif text-4xl md:text-5xl font-bold text-kt-chocolate mb-12">Complete Your Request</h1>
+        <h1 className="font-serif text-4xl md:text-5xl font-bold text-kt-chocolate mb-12">Complete Your Checkout</h1>
 
         {items.length === 0 ? (
           <div className="text-center py-20 bg-white border border-kt-chocolate/10 rounded-sm">
@@ -253,7 +253,7 @@ export default function CheckoutPage() {
                         <option key={date.value} value={date.label}>{date.label}</option>
                       ))}
                     </select>
-                    <p className="mt-2 font-sans text-xs text-kt-chocolate/60">Orders must be placed by Wednesday for the upcoming weekend. Payment will be collected after confirmation.</p>
+                    <p className="mt-2 font-sans text-xs text-kt-chocolate/60">Orders must be placed by Wednesday for the upcoming weekend. Questions can be sent to info@kingdomtreatzrva.com.</p>
                   </div>
 
                   <div>
