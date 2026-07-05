@@ -6,11 +6,10 @@ const catalog = [
   { id: '1', category: 'Signature Puddings', name: 'Classic Banana Pudding', qty: '8 oz', price: '$10.00', desc: 'The golden crumb of our signature shortbread meets a velvety vanilla cloud.', image: '/images/banana-pudding.jpg' },
   { id: '2', category: 'Signature Puddings', name: 'Strawberry Banana Pudding', qty: '8 oz', price: '$12.00', desc: 'Fresh strawberries folded into our decadent banana and vanilla creation.', image: '/images/banana-pudding.jpg' },
   { id: '3', category: 'Signature Puddings', name: 'Cookie Butter Banana Pudding', qty: '8 oz', price: '$12.00', desc: 'A rich infusion of spiced cookie butter swirled through velvety layers.', image: '/images/banana-pudding.jpg' },
-  { id: '4', category: 'Artisan Cakes', name: 'Brown Butter Pound Cake', qty: '1 slice', price: '$8.00', desc: 'A rich, buttery slice of Southern comfort with a delicate, caramelized crust.', image: '/images/cupcakes.jpg' },
-  { id: '5', category: 'Southern Pies', name: 'Sweet Potato Pie', qty: '1 pie', price: '$30.00', desc: 'Silky, spiced sweet potato filling nestled in a flaky, handcrafted butter crust.' },
-  { id: '6', category: 'Southern Pies', name: 'Sweet Potato Tarts', qty: '4 pack', price: '$10.00', desc: 'Bite-sized perfection featuring our signature sweet potato filling.' },
-  { id: '7', category: 'Southern Pies', name: 'Pecan Pie (Seasonal)', qty: '1 pie', price: '$35.00', desc: 'A royal treat of toasted pecans suspended in a rich, buttery caramel filling.' },
-  { id: '8', category: 'Cobblers', name: 'Peach Cobbler', qty: '8 oz', price: '$8.00', desc: 'Warm, spiced peaches baked under a golden, sugary crust.' },
+  { id: '5', category: 'Southern Pies', name: 'Sweet Potato Pie', qty: '1 pie', price: '$30.00', desc: 'Silky, spiced sweet potato filling nestled in a flaky, handcrafted butter crust.', image: '/images/banana-pudding.jpg' },
+  { id: '6', category: 'Southern Pies', name: 'Sweet Potato Tarts', qty: '4 pack', price: '$10.00', desc: 'Bite-sized perfection featuring our signature sweet potato filling.', image: '/images/banana-pudding.jpg' },
+  { id: '7', category: 'Southern Pies', name: 'Pecan Pie (Seasonal)', qty: '1 pie', price: '$35.00', desc: 'A royal treat of toasted pecans suspended in a rich, buttery caramel filling.', image: '/images/banana-pudding.jpg' },
+  { id: '8', category: 'Cobblers', name: 'Peach Cobbler', qty: '8 oz', price: '$8.00', desc: 'Warm, spiced peaches baked under a golden, sugary crust.', image: '/images/cupcakes.jpg' },
   { id: '9', category: 'Cookies', name: 'Chocolate Chip Cookies', qty: '1 dozen', price: '$24.00', desc: 'Classic, chewy, and loaded with premium chocolate morsels.', image: '/images/cupcakes.jpg' },
   { id: '10', category: 'Cookies', name: 'Assorted Cookies', qty: '6 cookies', price: '$12.00', desc: 'A curated selection of our finest cookie offerings.', image: '/images/cupcakes.jpg' },
   { id: '11', category: 'Cookies', name: 'Standard Single Cookie', qty: '1 cookie', price: '$3.25', desc: 'A single, perfectly baked masterpiece.', image: '/images/cupcakes.jpg' },
@@ -19,7 +18,7 @@ const catalog = [
   { id: '14', category: 'Cookies', name: 'Smores Cookie (Seasonal)', qty: '1 cookie', price: '$4.00', desc: 'Graham, chocolate, and toasted marshmallow wrapped in a cookie.', image: '/images/cupcakes.jpg' },
 ];
 
-const categories = ['All', 'Signature Puddings', 'Artisan Cakes', 'Southern Pies', 'Cobblers', 'Cookies', 'Cupcakes'];
+const categories = ['All', 'Signature Puddings', 'Southern Pies', 'Cobblers', 'Cookies'];
 
 export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState('All');
