@@ -30,9 +30,15 @@ export default function CheckoutPage() {
 
   const [paymentType, setPaymentType] = useState<'full' | 'deposit'>('full');
 
+  // Tracks the Square card input lifecycle so the UI never shows a dead,
+  // input-looking box: unconfigured = missing public keys, error = SDK failed.
+  const [cardStatus, setCardStatus] = useState<'loading' | 'ready' | 'unconfigured' | 'error'>('loading');
+  const [cardStatusMessage, setCardStatusMessage] = useState('');
+
   const cardRef = useRef<any>(null);
   const paymentsRef = useRef<SquarePayments | null>(null);
-  const scriptLoadedRef = useRef(false);
+
+  const hasItems = items.length > 0;
 
   // Generate available dates
   const availableDates = useMemo(() => {
@@ -56,42 +62,85 @@ export default function CheckoutPage() {
   }, []);
 
   useEffect(() => {
-    // Load Square Web Payments SDK script on client
+    // The #card-container div only exists while the cart has items, so the
+    // Square card input can only be attached once the form is on screen.
+    if (!hasItems) return;
+
     const applicationId = process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID;
     const locationId = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID || process.env.NEXT_PUBLIC_SQUARE_LOCATION;
     if (!applicationId || !locationId) {
-      // We won't initialize payments without public keys; that's expected in dev if not set
+      setCardStatus('unconfigured');
+      setCardStatusMessage('Online payment is temporarily unavailable. Please contact us to complete your order.');
       return;
     }
 
-    if (scriptLoadedRef.current) return;
-    scriptLoadedRef.current = true;
+    let cancelled = false;
+    setCardStatus('loading');
 
-    const env = (process.env.NEXT_PUBLIC_SQUARE_ENVIRONMENT || 'sandbox').toLowerCase();
-    const script = document.createElement('script');
-    script.src = env === 'production' ? 'https://web.squarecdn.com/v1/square.js' : 'https://sandbox.web.squarecdn.com/v1/square.js';
-    script.async = true;
-    script.onload = async () => {
+    const init = async () => {
       try {
-        // Initialize payments object
         // @ts-ignore
         const payments = await window.Square.payments(applicationId, locationId);
+        if (cancelled) return;
         paymentsRef.current = payments;
 
         const card = await payments.card();
+        if (cancelled) {
+          card.destroy();
+          return;
+        }
         cardRef.current = card;
         await card.attach('#card-container');
-        setStatus(s => (s === 'idle' ? 'idle' : s));
-      } catch (err) {
+        if (cancelled) {
+          card.destroy();
+          cardRef.current = null;
+          return;
+        }
+        setCardStatus('ready');
+      } catch (err: any) {
         console.error('Square payments init error', err);
-        // don't block checkout entirely — user can still submit order without online payment if you allow
+        if (!cancelled) {
+          setCardStatus('error');
+          setCardStatusMessage('The secure card form failed to load. Please refresh the page or try a different browser.');
+        }
       }
     };
-    script.onerror = (e) => {
-      console.error('Failed to load Square Web Payments SDK', e);
+
+    const onScriptError = () => {
+      console.error('Failed to load Square Web Payments SDK');
+      if (!cancelled) {
+        setCardStatus('error');
+        setCardStatusMessage('The secure card form could not be loaded. Please check your connection and refresh the page.');
+      }
     };
-    document.head.appendChild(script);
-  }, []);
+
+    if (window.Square) {
+      init();
+    } else {
+      // Sandbox application IDs start with "sandbox-"; use the matching SDK
+      // unless the environment is set explicitly.
+      const env = (process.env.NEXT_PUBLIC_SQUARE_ENVIRONMENT || (applicationId.startsWith('sandbox-') ? 'sandbox' : 'production')).toLowerCase();
+      const src = env === 'production' ? 'https://web.squarecdn.com/v1/square.js' : 'https://sandbox.web.squarecdn.com/v1/square.js';
+      let script = document.querySelector<HTMLScriptElement>('script[data-square-sdk]');
+      if (!script) {
+        script = document.createElement('script');
+        script.src = src;
+        script.async = true;
+        script.dataset.squareSdk = 'true';
+        document.head.appendChild(script);
+      }
+      script.addEventListener('load', init);
+      script.addEventListener('error', onScriptError);
+    }
+
+    return () => {
+      cancelled = true;
+      if (cardRef.current) {
+        cardRef.current.destroy();
+        cardRef.current = null;
+      }
+    };
+  }, [hasItems]);
 
   const tokenizeCard = async () => {
     if (!cardRef.current) throw new Error('Payment form not initialized');
@@ -112,15 +161,11 @@ export default function CheckoutPage() {
       // Ensure pickup date set
       if (!formData.pickupDate) throw new Error('Please select a pickup date');
 
-      // Tokenize card client-side
-      const applicationId = process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID;
-      const locationId = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID || process.env.NEXT_PUBLIC_SQUARE_LOCATION;
-
-      if (!applicationId || !locationId) {
-        throw new Error('Payment is not configured. Contact the site administrator.');
+      if (cardStatus !== 'ready') {
+        throw new Error(cardStatusMessage || 'The card form is not ready yet. Please wait a moment and try again.');
       }
 
-      // Tokenize
+      // Tokenize card client-side
       const sourceId = await tokenizeCard();
 
       // Build minimal items payload (id + quantity)
@@ -270,13 +315,23 @@ export default function CheckoutPage() {
 
                   <div>
                     <label className="block font-display text-xs tracking-wider uppercase mb-2 text-kt-chocolate/80">Card Details</label>
-                    <div id="card-container" className="p-4 bg-kt-champagne/50 border border-kt-chocolate/10 rounded-sm"></div>
+                    <div id="card-container" className={cardStatus === 'ready' ? 'p-4 bg-kt-champagne/50 border border-kt-chocolate/10 rounded-sm' : 'h-0 overflow-hidden'}></div>
+                    {cardStatus === 'loading' && (
+                      <div className="p-4 bg-kt-champagne/50 border border-kt-chocolate/10 rounded-sm font-sans text-sm text-kt-chocolate/60">
+                        Loading secure payment form...
+                      </div>
+                    )}
+                    {(cardStatus === 'unconfigured' || cardStatus === 'error') && (
+                      <div className="p-4 bg-kt-rouge/10 border border-kt-rouge rounded-sm font-sans text-sm text-kt-rouge">
+                        {cardStatusMessage}
+                      </div>
+                    )}
                     <p className="mt-2 font-sans text-xs text-kt-chocolate/60">Payments are processed securely by Square. Card details never touch our servers.</p>
                   </div>
 
-                  <button 
-                    type="submit" 
-                    disabled={status === 'submitting'}
+                  <button
+                    type="submit"
+                    disabled={status === 'submitting' || cardStatus !== 'ready'}
                     className="w-full py-4 mt-8 bg-kt-chocolate text-kt-champagne font-display text-sm tracking-wider uppercase rounded-sm hover:bg-kt-chocolate/90 transition-colors disabled:opacity-60"
                   >
                     {status === 'submitting' ? 'Processing Payment...' : `Pay ${paymentType === 'deposit' ? 'Deposit' : 'Full Amount'}`}
