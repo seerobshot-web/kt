@@ -84,7 +84,9 @@ export default function OrderDetailPage() {
 
   const recipient = order.fulfillments?.[0]?.pickupDetails?.recipient;
   const total = (order.totalMoney?.amount || 0) / 100;
-  const due = (order.netAmountDueMoney?.amount || 0) / 100;
+  const metadataTotal = order.metadata?.totalCents ? Number(order.metadata.totalCents) : total * 100;
+  const balancePaidCents = order.metadata?.balancePaidCents ? Number(order.metadata.balancePaidCents) : metadataTotal;
+  const due = Math.max(0, metadataTotal - balancePaidCents) / 100;
 
   return (
     <div className="max-w-2xl">

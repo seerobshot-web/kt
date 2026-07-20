@@ -61,7 +61,9 @@ export default function CustomerDetailPage() {
         {data.orders.length === 0 && <div className="px-4 py-6 text-center text-gray-500">No orders yet.</div>}
         {data.orders.map((o: any) => {
           const total = (o.totalMoney?.amount || 0) / 100;
-          const due = (o.netAmountDueMoney?.amount || 0) / 100;
+          const metadataTotalCents = o.metadata?.totalCents ? Number(o.metadata.totalCents) : total * 100;
+          const balancePaidCents = o.metadata?.balancePaidCents ? Number(o.metadata.balancePaidCents) : metadataTotalCents;
+          const due = Math.max(0, metadataTotalCents - balancePaidCents) / 100;
           return (
             <Link key={o.id} href={`/admin/orders/${o.id}`} className="block px-4 py-3 hover:bg-gray-50 text-sm flex items-center justify-between">
               <span>{o.fulfillments?.[0]?.pickupDetails?.pickupAt?.slice(0, 10) || o.id} · {o.state}</span>

@@ -54,13 +54,15 @@ export async function POST(req: NextRequest) {
       customerName: customer.name,
       customerEmail: customer.email,
       customerPhone: customer.phone,
+      totalCents: subtotalCents,
+      depositCents: depositOnly ? amountCents : undefined,
     });
     const payment = await chargeOrder({
       orderId: order.id!,
       sourceId,
       amountCents,
       buyerEmail: customer.email,
-      autocomplete: !depositOnly,
+      attachToOrder: !depositOnly,
     });
 
     sendOrderNotificationEmail({ customer, items, subtotalCents: amountCents, paymentId: payment.id, orderId: order.id }).catch((err) => {
