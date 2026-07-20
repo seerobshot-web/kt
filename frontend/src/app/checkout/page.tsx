@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef, FormEvent } from 'react';
 import { useCartStore } from '@/store/cartStore';
+import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle2, ShieldCheck } from 'lucide-react';
 
@@ -16,6 +17,7 @@ declare global {
 
 export default function CheckoutPage() {
   const { items, clearCart } = useCartStore();
+  const { user } = useAuth();
   const subtotal = items.reduce((total, item) => total + (item.price * item.quantity), 0);
 
   const [status, setStatus] = useState<'idle' | 'initializing' | 'submitting' | 'success' | 'error'>('idle');
@@ -27,6 +29,17 @@ export default function CheckoutPage() {
     phone: '',
     pickupDate: ''
   });
+
+  // Prefill from the logged-in account, without overwriting anything the user already typed.
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        name: prev.name || user.name,
+        email: prev.email || user.email,
+      }));
+    }
+  }, [user]);
 
   // Tracks the Square card input lifecycle so the UI never shows a dead,
   // input-looking box: unconfigured = missing public keys, error = SDK failed.

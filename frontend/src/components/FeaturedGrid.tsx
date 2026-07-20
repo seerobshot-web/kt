@@ -4,9 +4,9 @@ import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 
 const featuredItems = [
-  { id: 1, name: 'Classic Banana Pudding', category: 'Signature Puddings', price: '$10.00', desc: 'Ripe bananas layered with crunchy vanilla wafers and topped with a generous dollop of light, airy whipped cream.', image: '/images/banana-pudding.jpg' },
-  { id: 2, name: 'Brown Butter Pound Cake', category: 'Artisan Cakes', price: '$8.00', desc: 'A rich, buttery slice of Southern comfort with a delicate, caramelized crust.', image: '/images/cupcakes.jpg' },
-  { id: 3, name: 'Sweet Potato Pie', category: 'Southern Pies', price: '$30.00', desc: 'Silky, spiced sweet potato filling nestled in a flaky, handcrafted butter crust.', image: '/images/banana-pudding.jpg' },
+  { id: 1, name: 'Classic Banana Pudding', category: 'Signature Puddings', price: '$10.00', desc: 'Ripe bananas layered with crunchy vanilla wafers and topped with a generous dollop of light, airy whipped cream.', image: '/images/banana-pudding.png' },
+  { id: 2, name: 'Brown Butter Pound Cake', category: 'Artisan Cakes', price: '$8.00', desc: 'A rich, buttery slice of Southern comfort with a delicate, caramelized crust.', image: '/images/cookies.png' },
+  { id: 3, name: 'Sweet Potato Pie', category: 'Southern Pies', price: '$30.00', desc: 'Silky, spiced sweet potato filling nestled in a flaky, handcrafted butter crust.', image: '/images/cookies.png' },
 ];
 
 export default function FeaturedGrid() {

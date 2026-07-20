@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 import os
 import smtplib
 import uuid
@@ -5,24 +8,97 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 import httpx
-from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr, Field
 
 from catalog import CATALOG, compute_subtotal_cents
-
-load_dotenv()
+from db import db
+from models import User, UserPublic
+from auth import (
+    check_lockout,
+    clear_failed_attempts,
+    create_access_token,
+    get_current_user,
+    hash_password,
+    record_failed_attempt,
+    verify_password,
+)
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=["http://localhost:3000"],
+    allow_origin_regex=r"https://.*\.(preview\.emergentagent\.com|emergentagent\.com)",
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("startup")
+async def on_startup():
+    await db.users.create_index("email", unique=True)
+
+
+def to_public(user: User) -> UserPublic:
+    return UserPublic(id=user.id, name=user.name, email=user.email)
+
+
+class RegisterRequest(BaseModel):
+    name: str = Field(min_length=2)
+    email: EmailStr
+    password: str = Field(min_length=8)
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=1)
+
+
+@app.post('/api/auth/register')
+async def register(payload: RegisterRequest, response: Response):
+    email = payload.email.lower()
+    existing = await db.users.find_one({"email": email})
+    if existing:
+        raise HTTPException(status_code=409, detail="An account with this email already exists.")
+
+    user = User(name=payload.name, email=email, password_hash=hash_password(payload.password))
+    result = await db.users.insert_one(user.to_mongo())
+    user.id = str(result.inserted_id)
+
+    token = create_access_token(user.id, user.email)
+    response.set_cookie(key="access_token", value=token, httponly=True, secure=True, samesite="none", max_age=60 * 60 * 24 * 7, path="/")
+    return to_public(user)
+
+
+@app.post('/api/auth/login')
+async def login(payload: LoginRequest, response: Response):
+    email = payload.email.lower()
+    await check_lockout(email)
+
+    doc = await db.users.find_one({"email": email})
+    if not doc or not verify_password(payload.password, doc["password_hash"]):
+        await record_failed_attempt(email)
+        raise HTTPException(status_code=401, detail="Invalid email or password.")
+
+    await clear_failed_attempts(email)
+    user = User.from_mongo(doc)
+    token = create_access_token(user.id, user.email)
+    response.set_cookie(key="access_token", value=token, httponly=True, secure=True, samesite="none", max_age=60 * 60 * 24 * 7, path="/")
+    return to_public(user)
+
+
+@app.post('/api/auth/logout')
+async def logout(response: Response):
+    response.delete_cookie(key="access_token", path="/")
+    return {"success": True}
+
+
+@app.get('/api/auth/me')
+async def me(current_user: User = Depends(get_current_user)):
+    return to_public(current_user)
 
 
 class CartItem(BaseModel):

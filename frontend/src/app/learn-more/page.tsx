@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 export default function LearnMorePage() {
   return (
     <div className="bg-kt-champagne text-kt-chocolate min-h-screen">
@@ -19,20 +21,30 @@ export default function LearnMorePage() {
         <div className="max-w-4xl mx-auto text-center">
           <span className="font-display text-sm tracking-widest text-kt-rouge uppercase mb-4 block">Our Mission</span>
           <h2 className="font-serif text-4xl md:text-5xl font-bold mb-8">Mission Statement</h2>
-          <p className="font-sans text-lg text-kt-chocolate/50 italic leading-relaxed">
-            [Placeholder — Mission statement copy to be provided.]
+          <p className="font-sans text-lg text-kt-chocolate/80 leading-relaxed">
+            Our mission is to honor God by using my gifts, serving others with love, and building a successful business that creates opportunities to give back to my community. I strive to live with compassion, generosity, integrity, and perseverance while creating a legacy that blesses my family and inspires others.
           </p>
         </div>
       </section>
 
       {/* About the Founder */}
       <section data-testid="about-founder-section" className="py-24 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <span className="font-display text-sm tracking-widest text-kt-rouge uppercase mb-4 block">The Woman Behind The Crown</span>
-          <h2 className="font-serif text-4xl md:text-5xl font-bold mb-8">About the Founder</h2>
-          <p className="font-sans text-lg text-kt-chocolate/50 italic leading-relaxed">
-            [Placeholder — Founder bio and story to be provided.]
-          </p>
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <div className="relative aspect-[4/5] rounded-sm overflow-hidden shadow-md">
+            <Image
+              src="/images/founder.png"
+              alt="Founder of Kingdom Treatz"
+              fill
+              className="object-cover"
+            />
+          </div>
+          <div>
+            <span className="font-display text-sm tracking-widest text-kt-rouge uppercase mb-4 block">The Woman Behind The Crown</span>
+            <h2 className="font-serif text-4xl md:text-5xl font-bold mb-8">About the Founder</h2>
+            <p className="font-sans text-lg text-kt-chocolate/50 italic leading-relaxed">
+              [Placeholder — Founder bio and story to be provided.]
+            </p>
+          </div>
         </div>
       </section>
 
