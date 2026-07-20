@@ -1,0 +1,52 @@
+{
+  "summary": "Iteration 3 tested: pickup cutoff logic, Square Order/Customer creation checkout, admin/CRM portal (login, session, rate-limit, protection, nav, logout), CSP, and customer-side regression. Backend: 14/14 pytest tests PASS. Frontend Playwright: all admin flows work end-to-end through the public URL (FastAPI -> Next.js proxy chain). Pickup select on /checkout shows EXACTLY 2 options (Friday July 24 + Saturday July 25) plus placeholder, cutoff-note correctly hidden (today is Sunday, pre-cutoff). Admin dashboard renders Square placeholder AUTHENTICATION_ERROR cleanly (as expected). No crashes, no broken layouts. Customer pages (/, /menu, /specials, /learn-more, /login, /register) all 200 with no regression, and customer header is correctly absent on /admin.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "CSP header", "issue": "Cloudflare beacon (static.cloudflareinsights.com/beacon.min.js) is blocked by CSP script-src on /checkout and /admin/*. Only analytics; not user-facing. Consider adding static.cloudflareinsights.com to script-src or disabling the beacon."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_3.py",
+    "/app/test_reports/pytest/iteration_3.xml"
+  ],
+  "action_items": [
+    "None blocking. Optional: (1) whitelist static.cloudflareinsights.com in CSP script-src or drop the CF beacon to silence console noise. (2) When real Square sandbox keys are provided, re-run the take-payment card form and full checkout POST to confirm live Square Order+Customer+Payment path."
+  ],
+  "critical_code_review_comments": [
+    "adminAuth.ts rate-limiter is per-process in-memory — will not survive Next.js restart or scale beyond a single instance. Acceptable for MVP single-instance Hostinger deploy but flag before horizontal scaling.",
+    "adminAuth.ts checkRateLimit() only reads lockedUntil and doesn't reset the count once lockout expires — after 15 min, next single failure re-locks immediately because count is still >=5. Consider resetting count when lockedUntil <= now.",
+    "backend/server.py CORS: allow_origins limited to localhost:3000 with a regex for preview.emergentagent.com — good. But the reverse proxy blindly forwards all incoming headers including Host mutations; low risk but consider stripping x-forwarded-* if not needed.",
+    "checkout/route.ts returns status 500 when Square is not configured but the message text is user-facing — could arguably be 503 (service unavailable). Minor.",
+    "proxy.ts (middleware equivalent) does not verify token cryptographically for pages before redirect — actually it does via verifyAdminSessionToken. Good."
+  ],
+  "updated_files": ["/app/backend/tests/test_iteration_3.py (new)"],
+  "success_rate": {"backend": "100% (14/14 pytest)", "frontend": "100% of required checks"},
+  "test_credentials": "Admin passcode: kingdomtreatz-staff-2026 (from ADMIN_PASSCODE in /app/frontend/.env). Customer auth: register any fresh email/password >=8 chars.",
+  "seed_data_creation": "None. Rate-limit test uses random X-Forwarded-For per run.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Preview URL: https://b0b1c486-a310-4321-877e-5f653e700291.preview.emergentagent.com. All /api/admin/* and /api/checkout traffic is proxied by FastAPI -> Next.js localhost:3000, so cookies (admin_session, access_token) work end-to-end. Old /app/backend/tests/test_checkout_api.py is stale (targets removed Python checkout). Use /app/backend/tests/test_iteration_3.py for regression. Reaching /checkout REQUIRES adding an item to cart and clicking 'Initiate Order Request' (cart is in-memory zustand, no persist) — direct page.goto('/checkout') shows empty state. Sample Playwright flow present in this iteration's tool logs.",
+  "verified_ui_elements": {
+    "admin-passcode-input": "present on /admin/login",
+    "admin-login-submit": "present, submits & sets admin_session cookie",
+    "admin-login-error": "shows 'Incorrect passcode.' on wrong passcode",
+    "admin-nav-dashboard/customers/orders/take-payment": "all present on /admin layout",
+    "admin-logout-button": "present, clears session and redirects",
+    "admin-tp-pickup-day": "present, exactly 2 options (Friday + Saturday)",
+    "admin-tp-deposit-checkbox": "present on /admin/take-payment",
+    "admin-tp-qty-1": "present on /admin/take-payment",
+    "admin-card-error": "shows 'The card form failed to load...' (Square placeholder app-id)",
+    "checkout pickup date select": "exactly 3 options (placeholder + Friday July 24 + Saturday July 25) — pickup-cutoff-note correctly hidden (Sun < Wed 9PM cutoff)",
+    "checkout-submit-button": "text 'Pay Full Amount'",
+    "square-approved-badge": "present in DOM (source verified /app/frontend/src/app/checkout/page.tsx:315)",
+    "50%/deposit text on /checkout": "ABSENT (correctly removed)",
+    "customer header on /admin": "ABSENT (correct — separate admin layout)"
+  },
+  "rca of the issue": "N/A — no bugs found in scope of this iteration. All new feature branches (pickup cutoff, Square Order/Customer via `square` npm SDK, admin/CRM portal, proxy.ts route protection, FastAPI reverse proxy, CSP) are functioning end-to-end. Square-integrated pages return structured JSON auth errors (401 AUTHENTICATION_ERROR / UNAUTHORIZED) as expected while ACCESS_TOKEN remains a placeholder."
+}

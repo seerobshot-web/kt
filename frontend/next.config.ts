@@ -19,6 +19,12 @@ const nextConfig: NextConfig = {
           { key: 'Content-Security-Policy', value: squareCspDirectives },
         ],
       },
+      {
+        source: '/admin/:path*',
+        headers: [
+          { key: 'Content-Security-Policy', value: squareCspDirectives },
+        ],
+      },
     ];
   },
 };

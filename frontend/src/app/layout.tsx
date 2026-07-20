@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { Playfair_Display, DM_Sans, Hanken_Grotesk, Fredoka } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import CartDrawer from "@/components/CartDrawer";
+import SiteChrome from "@/components/SiteChrome";
 import { AuthProvider } from "@/context/AuthContext";
 
 const playfair = Playfair_Display({
@@ -74,12 +72,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         <AuthProvider>
-          <Header />
-          <main className="flex-grow">
-            {children}
-          </main>
-          <Footer />
-          <CartDrawer />
+          <SiteChrome>{children}</SiteChrome>
         </AuthProvider>
       </body>
     </html>
