@@ -4,9 +4,9 @@ import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 
 const featuredItems = [
-  { id: 1, name: 'Classic Banana Pudding', category: 'Signature Puddings', price: '$10.00', desc: 'Ripe bananas layered with crunchy vanilla wafers and topped with a generous dollop of light, airy whipped cream.', image: '/images/banana-pudding.jpg' },
-  { id: 2, name: 'Brown Butter Pound Cake', category: 'Artisan Cakes', price: '$8.00', desc: 'A rich, buttery slice of Southern comfort with a delicate, caramelized crust.', image: '/images/cupcakes.jpg' },
-  { id: 3, name: 'Sweet Potato Pie', category: 'Southern Pies', price: '$30.00', desc: 'Silky, spiced sweet potato filling nestled in a flaky, handcrafted butter crust.', image: '/images/banana-pudding.jpg' },
+  { id: 1, name: 'Classic Banana Pudding', category: 'Signature Puddings', price: '$10.00', desc: 'Ripe bananas layered with crunchy vanilla wafers and topped with a generous dollop of light, airy whipped cream.', image: '/images/banana-pudding.png' },
+  { id: 2, name: 'Brown Butter Pound Cake', category: 'Artisan Cakes', price: '$8.00', desc: 'A rich, buttery slice of Southern comfort with a delicate, caramelized crust.', image: '/images/cookies.png' },
+  { id: 3, name: 'Sweet Potato Pie', category: 'Southern Pies', price: '$30.00', desc: 'Silky, spiced sweet potato filling nestled in a flaky, handcrafted butter crust.', image: '/images/cookies.png' },
 ];
 
 export default function FeaturedGrid() {
@@ -14,9 +14,9 @@ export default function FeaturedGrid() {
     <section className="py-24 bg-kt-champagne text-kt-chocolate relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-16">
-          <h2 className="font-serif text-4xl md:text-5xl font-bold mb-4">The Royal Court</h2>
+          <h2 className="font-serif text-4xl md:text-5xl font-bold mb-4">A Few Kitchen Favorites</h2>
           <p className="font-sans text-lg text-kt-chocolate/80 max-w-2xl mx-auto">
-            Discover the masterful creations that have captured the hearts of Richmond.
+            A small sample of what comes out of our kitchen each week &mdash; handmade in Richmond, in small batches, just for you.
           </p>
         </div>
         

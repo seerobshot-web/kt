@@ -2,8 +2,9 @@
 
 import { useState, useMemo, useEffect, useRef, FormEvent } from 'react';
 import { useCartStore } from '@/store/cartStore';
+import { getAvailablePickupDates, type PickupDay } from '@/lib/pickup';
 import Link from 'next/link';
-import { ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ShieldCheck } from 'lucide-react';
 
 type SquarePayments = any;
 
@@ -25,10 +26,8 @@ export default function CheckoutPage() {
     name: '',
     email: '',
     phone: '',
-    pickupDate: ''
+    pickupDay: '' as PickupDay | ''
   });
-
-  const [paymentType, setPaymentType] = useState<'full' | 'deposit'>('full');
 
   // Tracks the Square card input lifecycle so the UI never shows a dead,
   // input-looking box: unconfigured = missing public keys, error = SDK failed.
@@ -40,26 +39,9 @@ export default function CheckoutPage() {
 
   const hasItems = items.length > 0;
 
-  // Generate available dates
-  const availableDates = useMemo(() => {
-    const dates: Date[] = [];
-    const today = new Date();
-    let currentDate = new Date(today);
-    currentDate.setDate(currentDate.getDate() + 1);
-
-    while (dates.length < 6) {
-      const day = currentDate.getDay();
-      if (day === 5 || day === 6) {
-        dates.push(new Date(currentDate));
-      }
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-
-    return dates.map(d => ({
-      value: d.toISOString().split('T')[0],
-      label: d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
-    }));
-  }, []);
+  // Two selectable pickup dates (this or next Fri/Sat), governed by the
+  // Wednesday 9 PM America/New_York cutoff shared with the admin portal.
+  const pickupAvailability = useMemo(() => getAvailablePickupDates(), []);
 
   useEffect(() => {
     // The #card-container div only exists while the cart has items, so the
@@ -159,7 +141,7 @@ export default function CheckoutPage() {
 
     try {
       // Ensure pickup date set
-      if (!formData.pickupDate) throw new Error('Please select a pickup date');
+      if (!formData.pickupDay) throw new Error('Please select a pickup date');
 
       if (cardStatus !== 'ready') {
         throw new Error(cardStatusMessage || 'The card form is not ready yet. Please wait a moment and try again.');
@@ -176,10 +158,10 @@ export default function CheckoutPage() {
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
-          pickupDate: formData.pickupDate,
+          pickupDate: pickupAvailability[formData.pickupDay].date,
+          pickupDay: formData.pickupDay,
         },
         items: payloadItems,
-        paymentType,
         sourceId,
       };
 
@@ -289,28 +271,18 @@ export default function CheckoutPage() {
                     <label className="block font-display text-xs tracking-wider uppercase mb-2 text-kt-chocolate/80">Select Weekend Pickup Date *</label>
                     <select 
                       required
-                      value={formData.pickupDate}
-                      onChange={(e) => setFormData({...formData, pickupDate: e.target.value})}
+                      value={formData.pickupDay}
+                      onChange={(e) => setFormData({...formData, pickupDay: e.target.value as PickupDay})}
                       className="w-full px-4 py-3 bg-kt-champagne/50 border border-kt-chocolate/20 rounded-sm focus:outline-none focus:border-kt-rouge focus:bg-white transition-colors font-sans"
                     >
                       <option value="" disabled>Choose a Friday or Saturday...</option>
-                      {availableDates.map(date => (
-                        <option key={date.value} value={date.label}>{date.label}</option>
-                      ))}
+                      <option value="friday">{pickupAvailability.friday.label}</option>
+                      <option value="saturday">{pickupAvailability.saturday.label}</option>
                     </select>
-                    <p className="mt-2 font-sans text-xs text-kt-chocolate/60">Orders must be placed by Wednesday for the upcoming weekend. Payment will be collected after confirmation.</p>
-                  </div>
-
-                  <div>
-                    <label className="block font-display text-xs tracking-wider uppercase mb-2 text-kt-chocolate/80">Payment Option</label>
-                    <div className="flex items-center gap-6">
-                      <label className="inline-flex items-center text-sm">
-                        <input type="radio" name="paymentType" value="full" checked={paymentType === 'full'} onChange={() => setPaymentType('full')} className="mr-2" /> Pay in Full
-                      </label>
-                      <label className="inline-flex items-center text-sm">
-                        <input type="radio" name="paymentType" value="deposit" checked={paymentType === 'deposit'} onChange={() => setPaymentType('deposit')} className="mr-2" /> Pay 50% Deposit
-                      </label>
-                    </div>
+                    <p className="mt-2 font-sans text-xs text-kt-chocolate/60">Orders must be placed by Wednesday 9 PM for the upcoming weekend. Payment will be collected after confirmation.</p>
+                    {pickupAvailability.cutoffPassed && (
+                      <p data-testid="pickup-cutoff-note" className="mt-2 font-sans text-xs text-kt-rouge">Orders for this week have closed; you're ordering for the following weekend.</p>
+                    )}
                   </div>
 
                   <div>
@@ -327,14 +299,19 @@ export default function CheckoutPage() {
                       </div>
                     )}
                     <p className="mt-2 font-sans text-xs text-kt-chocolate/60">Payments are processed securely by Square. Card details never touch our servers.</p>
+                    <div data-testid="square-approved-badge" className="mt-4 inline-flex items-center gap-2 px-3 py-2 bg-kt-champagne/60 border border-kt-chocolate/10 rounded-sm">
+                      <ShieldCheck className="w-4 h-4 text-kt-rouge" />
+                      <span className="font-display text-[10px] tracking-wider uppercase text-kt-chocolate/70">Square Brand Approved &middot; Secure Checkout</span>
+                    </div>
                   </div>
 
                   <button
                     type="submit"
+                    data-testid="checkout-submit-button"
                     disabled={status === 'submitting' || cardStatus !== 'ready'}
                     className="w-full py-4 mt-8 bg-kt-chocolate text-kt-champagne font-display text-sm tracking-wider uppercase rounded-sm hover:bg-kt-chocolate/90 transition-colors disabled:opacity-60"
                   >
-                    {status === 'submitting' ? 'Processing Payment...' : `Pay ${paymentType === 'deposit' ? 'Deposit' : 'Full Amount'}`}
+                    {status === 'submitting' ? 'Processing Payment...' : 'Pay Full Amount'}
                   </button>
                 </form>
               </div>

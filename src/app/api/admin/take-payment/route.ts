@@ -6,7 +6,7 @@ import { isValidPickupSelection } from '@/lib/pickup';
 import { sendOrderNotificationEmail } from '@/lib/mailer';
 import { isSquareConfigured } from '@/lib/square';
 
-const CheckoutSchema = z.object({
+const TakePaymentSchema = z.object({
   customer: z.object({
     name: z.string().min(2),
     email: z.string().email(),
@@ -16,39 +16,33 @@ const CheckoutSchema = z.object({
   }),
   items: z.array(z.object({ id: z.string(), quantity: z.number().int().min(1) })).min(1),
   sourceId: z.string().min(1),
+  depositOnly: z.boolean().optional().default(false),
 });
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
-  const parsed = CheckoutSchema.safeParse(body);
+  const parsed = TakePaymentSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ success: false, error: 'Please check your details and try again.' }, { status: 422 });
+    return NextResponse.json({ success: false, error: 'Please check the order details and try again.' }, { status: 422 });
   }
-  const { customer, items, sourceId } = parsed.data;
+  const { customer, items, sourceId, depositOnly } = parsed.data;
 
   if (!isValidPickupSelection(customer.pickupDate, customer.pickupDay)) {
-    return NextResponse.json(
-      { success: false, error: 'That pickup date is no longer available. Please refresh the page and choose a current date.' },
-      { status: 422 }
-    );
+    return NextResponse.json({ success: false, error: 'That pickup date is outside the current selectable window.' }, { status: 422 });
   }
 
   let subtotalCents: number;
   try {
     subtotalCents = computeSubtotalCents(items);
   } catch {
-    return NextResponse.json(
-      { success: false, error: 'Your cart contains an item that is no longer on the menu. Please rebuild your cart.' },
-      { status: 422 }
-    );
+    return NextResponse.json({ success: false, error: 'This order contains an item that is no longer on the menu.' }, { status: 422 });
   }
 
   if (!isSquareConfigured()) {
-    return NextResponse.json(
-      { success: false, error: 'Payment is not configured yet. Please contact us to complete your order.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: 'Square is not configured yet.' }, { status: 500 });
   }
+
+  const amountCents = depositOnly ? Math.round(subtotalCents / 2) : subtotalCents;
 
   try {
     const customerId = await upsertCustomer(customer);
@@ -61,26 +55,24 @@ export async function POST(req: NextRequest) {
       customerEmail: customer.email,
       customerPhone: customer.phone,
       totalCents: subtotalCents,
+      depositCents: depositOnly ? amountCents : undefined,
     });
     const payment = await chargeOrder({
       orderId: order.id!,
       sourceId,
-      amountCents: subtotalCents,
+      amountCents,
       buyerEmail: customer.email,
-      attachToOrder: true,
+      attachToOrder: !depositOnly,
     });
 
-    sendOrderNotificationEmail({ customer, items, subtotalCents, paymentId: payment.id, orderId: order.id }).catch((err) => {
+    sendOrderNotificationEmail({ customer, items, subtotalCents: amountCents, paymentId: payment.id, orderId: order.id }).catch((err) => {
       console.error('Order email failed (payment succeeded):', err);
     });
 
-    return NextResponse.json({ success: true, paymentId: payment.id, orderId: order.id });
+    return NextResponse.json({ success: true, paymentId: payment.id, orderId: order.id, amountChargedCents: amountCents, totalCents: subtotalCents });
   } catch (err: any) {
-    console.error('Checkout error:', err);
-    const detail = err?.body?.errors?.[0]?.detail || err?.errors?.[0]?.detail || err?.message;
-    return NextResponse.json(
-      { success: false, error: detail || 'Your card could not be charged. Please check your details and try again.' },
-      { status: 402 }
-    );
+    console.error('Take-payment error:', err);
+    const detail = err?.body?.errors?.[0]?.detail || err?.message;
+    return NextResponse.json({ success: false, error: detail || 'The card could not be charged.' }, { status: 402 });
   }
 }

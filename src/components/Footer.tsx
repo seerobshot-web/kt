@@ -7,7 +7,9 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
           {/* Brand & Story */}
           <div className="space-y-4">
-            <h3 className="font-serif text-3xl font-bold">Kingdom Treatz</h3>
+            <h3 className="font-[family-name:var(--font-wordmark)] text-2xl md:text-3xl">
+              KINGDOM <span className="text-kt-blush">TREATZ</span>
+            </h3>
             <p className="font-sans text-kt-champagne/80 max-w-sm">
               A Little Taste of Heaven. Richmond's premier luxury small-batch bakery. Every treat is a handcrafted masterpiece.
             </p>
@@ -31,10 +33,11 @@ export default function Footer() {
               <p>
                 <strong>Kingdom Treatz Bakery</strong><br/>
                 Richmond, VA 23223<br/>
-                (Local Pickup Only - Fridays & Saturdays)
+                (Local Pickup Only &mdash; Fridays &amp; Saturdays)
               </p>
               <p className="pt-4">
-                <a href="mailto:info@kingdomtreatzrva.com" className="hover:text-kt-rouge transition-colors">info@kingdomtreatzrva.com</a>
+                Order online anytime, or reach us directly at{' '}
+                <a href="mailto:info@kingdomtreatzrva.com" className="hover:text-kt-rouge transition-colors">info@kingdomtreatzrva.com</a>.
               </p>
             </div>
           </div>
