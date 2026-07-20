@@ -12,17 +12,15 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full bg-kt-champagne/95 backdrop-blur-md border-b border-kt-chocolate/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
-          {/* Logo with Tagline Cropped via CSS */}
-          <Link href="/" className="relative flex items-center h-16 w-48 overflow-hidden group">
-            <div className="absolute inset-0 top-[-5px]">
-              <Image 
-                src="/images/logo.jpg" 
-                alt="Kingdom Treatz Logo" 
-                fill
-                className="object-cover object-top mix-blend-multiply"
-                priority
-              />
-            </div>
+          {/* Wordmark Logo */}
+          <Link href="/" data-testid="brand-logo-link" className="relative flex items-center h-14 w-36 shrink-0">
+            <Image
+              src="/images/logo.png"
+              alt="Kingdom Treatz"
+              fill
+              className="object-contain object-left"
+              priority
+            />
           </Link>
 
           {/* Desktop Nav */}
@@ -53,7 +51,7 @@ export default function Header() {
 
           {/* Actions */}
           <div className="flex items-center space-x-4">
-            <button 
+            <button
               onClick={toggleDrawer}
               className="relative text-kt-chocolate hover:text-kt-rouge transition-colors p-2"
             >

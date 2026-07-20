@@ -5,7 +5,7 @@ export default function Hero() {
     <section 
       className="relative w-full h-[80vh] flex items-center justify-center overflow-hidden bg-kt-chocolate"
       style={{
-        backgroundImage: 'url("/images/cupcakes.jpg")',
+        backgroundImage: 'url("/images/cookies.png")',
         backgroundAttachment: 'fixed',
         backgroundPosition: 'center',
         backgroundSize: 'cover'
