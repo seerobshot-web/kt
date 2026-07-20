@@ -14,6 +14,28 @@ export default function LearnMorePage() {
         </div>
       </section>
 
+      {/* Mission Statement */}
+      <section data-testid="mission-statement-section" className="py-24 px-4 bg-white">
+        <div className="max-w-4xl mx-auto text-center">
+          <span className="font-display text-sm tracking-widest text-kt-rouge uppercase mb-4 block">Our Mission</span>
+          <h2 className="font-serif text-4xl md:text-5xl font-bold mb-8">Mission Statement</h2>
+          <p className="font-sans text-lg text-kt-chocolate/50 italic leading-relaxed">
+            [Placeholder — Mission statement copy to be provided.]
+          </p>
+        </div>
+      </section>
+
+      {/* About the Founder */}
+      <section data-testid="about-founder-section" className="py-24 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <span className="font-display text-sm tracking-widest text-kt-rouge uppercase mb-4 block">The Woman Behind The Crown</span>
+          <h2 className="font-serif text-4xl md:text-5xl font-bold mb-8">About the Founder</h2>
+          <p className="font-sans text-lg text-kt-chocolate/50 italic leading-relaxed">
+            [Placeholder — Founder bio and story to be provided.]
+          </p>
+        </div>
+      </section>
+
       {/* The 3-Step RVA Process */}
       <section className="py-24 bg-kt-emerald text-kt-champagne px-4">
         <div className="max-w-6xl mx-auto">

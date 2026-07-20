@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef, FormEvent } from 'react';
 import { useCartStore } from '@/store/cartStore';
 import Link from 'next/link';
-import { ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ShieldCheck } from 'lucide-react';
 
 type SquarePayments = any;
 
@@ -27,8 +27,6 @@ export default function CheckoutPage() {
     phone: '',
     pickupDate: ''
   });
-
-  const [paymentType, setPaymentType] = useState<'full' | 'deposit'>('full');
 
   // Tracks the Square card input lifecycle so the UI never shows a dead,
   // input-looking box: unconfigured = missing public keys, error = SDK failed.
@@ -179,7 +177,6 @@ export default function CheckoutPage() {
           pickupDate: formData.pickupDate,
         },
         items: payloadItems,
-        paymentType,
         sourceId,
       };
 
@@ -302,18 +299,6 @@ export default function CheckoutPage() {
                   </div>
 
                   <div>
-                    <label className="block font-display text-xs tracking-wider uppercase mb-2 text-kt-chocolate/80">Payment Option</label>
-                    <div className="flex items-center gap-6">
-                      <label className="inline-flex items-center text-sm">
-                        <input type="radio" name="paymentType" value="full" checked={paymentType === 'full'} onChange={() => setPaymentType('full')} className="mr-2" /> Pay in Full
-                      </label>
-                      <label className="inline-flex items-center text-sm">
-                        <input type="radio" name="paymentType" value="deposit" checked={paymentType === 'deposit'} onChange={() => setPaymentType('deposit')} className="mr-2" /> Pay 50% Deposit
-                      </label>
-                    </div>
-                  </div>
-
-                  <div>
                     <label className="block font-display text-xs tracking-wider uppercase mb-2 text-kt-chocolate/80">Card Details</label>
                     <div id="card-container" className={cardStatus === 'ready' ? 'p-4 bg-kt-champagne/50 border border-kt-chocolate/10 rounded-sm' : 'h-0 overflow-hidden'}></div>
                     {cardStatus === 'loading' && (
@@ -327,14 +312,19 @@ export default function CheckoutPage() {
                       </div>
                     )}
                     <p className="mt-2 font-sans text-xs text-kt-chocolate/60">Payments are processed securely by Square. Card details never touch our servers.</p>
+                    <div data-testid="square-approved-badge" className="mt-4 inline-flex items-center gap-2 px-3 py-2 bg-kt-champagne/60 border border-kt-chocolate/10 rounded-sm">
+                      <ShieldCheck className="w-4 h-4 text-kt-rouge" />
+                      <span className="font-display text-[10px] tracking-wider uppercase text-kt-chocolate/70">Square Brand Approved &middot; Secure Checkout</span>
+                    </div>
                   </div>
 
                   <button
                     type="submit"
+                    data-testid="checkout-submit-button"
                     disabled={status === 'submitting' || cardStatus !== 'ready'}
                     className="w-full py-4 mt-8 bg-kt-chocolate text-kt-champagne font-display text-sm tracking-wider uppercase rounded-sm hover:bg-kt-chocolate/90 transition-colors disabled:opacity-60"
                   >
-                    {status === 'submitting' ? 'Processing Payment...' : `Pay ${paymentType === 'deposit' ? 'Deposit' : 'Full Amount'}`}
+                    {status === 'submitting' ? 'Processing Payment...' : 'Pay Full Amount'}
                   </button>
                 </form>
               </div>

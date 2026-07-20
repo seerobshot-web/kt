@@ -1,7 +1,6 @@
 "use client";
 import Link from 'next/link';
-import Image from 'next/image';
-import { ShoppingBag, ChevronDown, Menu } from 'lucide-react';
+import { ShoppingBag, ChevronDown, Menu, CakeSlice } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 
 export default function Header() {
@@ -12,17 +11,12 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full bg-kt-champagne/95 backdrop-blur-md border-b border-kt-chocolate/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
-          {/* Logo with Tagline Cropped via CSS */}
-          <Link href="/" className="relative flex items-center h-16 w-48 overflow-hidden group">
-            <div className="absolute inset-0 top-[-5px]">
-              <Image 
-                src="/images/logo.jpg" 
-                alt="Kingdom Treatz Logo" 
-                fill
-                className="object-cover object-top mix-blend-multiply"
-                priority
-              />
-            </div>
+          {/* Wordmark Logo: minimalist cupcake icon + brand wordmark */}
+          <Link href="/" data-testid="brand-logo-link" className="flex items-center gap-2 group">
+            <CakeSlice className="w-7 h-7 text-kt-rouge shrink-0" strokeWidth={1.75} />
+            <span className="font-[family-name:var(--font-wordmark)] text-xl md:text-2xl leading-none tracking-tight text-kt-chocolate">
+              KINGDOM <span className="text-kt-rouge">TREATZ</span>
+            </span>
           </Link>
 
           {/* Desktop Nav */}

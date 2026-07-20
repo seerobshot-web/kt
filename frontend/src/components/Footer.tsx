@@ -7,7 +7,9 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
           {/* Brand & Story */}
           <div className="space-y-4">
-            <h3 className="font-serif text-3xl font-bold">Kingdom Treatz</h3>
+            <h3 className="font-[family-name:var(--font-wordmark)] text-2xl md:text-3xl">
+              KINGDOM <span className="text-kt-blush">TREATZ</span>
+            </h3>
             <p className="font-sans text-kt-champagne/80 max-w-sm">
               A Little Taste of Heaven. Richmond's premier luxury small-batch bakery. Every treat is a handcrafted masterpiece.
             </p>
