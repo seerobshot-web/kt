@@ -36,6 +36,11 @@ Multi-directive brief for the "Kingdom Treatz" bakery site (acting as a multi-di
 - Testing agent found & main agent fixed a timezone-naive vs aware datetime bug in `auth.py::check_lockout` (was causing a 500 instead of a 429 on the 6th failed login).
 - Product photos: added real per-item photos — Classic Banana Pudding & Cookie Butter Banana Pudding use `banana-pudding.png`, Strawberry Banana Pudding uses `strawberry-banana-pudding.png` (both user-provided), replacing the generic cookies.png placeholder for those 3 items. Other items still use `cookies.png` as fallback pending more product photos.
 
+## What's Been Implemented (2026-07-20, cont'd 2)
+- Reviewed Square Web Payments SDK docs (overview + reference) per user request. Confirmed our checkout implementation already matches Square's recommended flow (`Square.payments(appId, locationId)` → `payments.card()` → `card.attach()` → `card.tokenize()` → POST to backend).
+- **Important finding applied**: Since Oct 1, 2025 Square requires Secure Contexts + a proper Content-Security-Policy for all Web Payments SDK integrations. Added CSP header (`/checkout` route) in `next.config.ts` allowlisting `web.squarecdn.com` / `sandbox.web.squarecdn.com` (script-src, frame-src), `pci-connect.squareup(sandbox).com` (connect-src), and Square's font CDN. Verified via browser console — no CSP violations, Square SDK script loads and executes correctly (only remaining error is the expected placeholder App ID format error).
+- Site is HTTPS-served already (Secure Context requirement met).
+
 ## Deferred / Backlog
 - **P0**: User to provide real Square Sandbox credentials (`SQUARE_ACCESS_TOKEN`, `NEXT_PUBLIC_SQUARE_APPLICATION_ID`, `LOCATION_ID`) in `/app/backend/.env` and `/app/frontend/.env` to fully test card tokenization + payment.
 - **P1**: More product photos still needed for: Brown Butter Pound Cake, Sweet Potato Pie/Tarts, Pecan Pie, Peach Cobbler, and all Cookies category items (currently fall back to the generic cookies.png photo).
