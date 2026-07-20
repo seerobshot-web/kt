@@ -16,10 +16,10 @@ Multi-directive brief for the "Kingdom Treatz" bakery site (acting as a multi-di
 - About Us: restructure the existing `/learn-more` page (not a new `/about` route).
 
 ## Architecture
-- Next.js 16 (App Router, TS, Tailwind v4) app — moved from `/app` root into `/app/frontend` to match the platform's supervisor config (`yarn start` on port 3000).
-- Python FastAPI backend at `/app/backend` (uvicorn on port 8001) — created because the platform's ingress routes all external `/api/*` requests to port 8001, not to Next.js's own `/api` routes on port 3000. The old `frontend/src/app/api/checkout/route.ts` was removed (dead code — never reachable externally).
-- `POST /api/checkout` (FastAPI): validates customer + cart items + Square `sourceId`, computes subtotal from `backend/catalog.py`, calls Square Payments API (sandbox by default via `SQUARE_ENVIRONMENT`), sends order email via smtplib if `SMTP_PASS` is set.
-- MongoDB (via motor, `kingdom_treatz` DB) now used for the `users`, `login_attempts` collections backing email/password auth (JWT in httpOnly cookie). No order persistence yet — payments go straight to Square + optional email notification.
+- Next.js 16 (App Router, TS, Tailwind v4) app at `/app/frontend` — this IS the production app (deploys to Hostinger Cloud as a single Node.js app via hPanel, kingdomtreatzrva.com, NOT a static export).
+- **All checkout, Square Order/Customer, and admin/CRM logic lives natively in Next.js** (route.ts handlers + `src/proxy.ts`, Next 16's renamed `middleware.ts`), using the official `square` npm package — this is what actually ships to Hostinger.
+- `/app/backend` (Python FastAPI, port 8001) still exists ONLY because Emergent's preview-environment ingress always routes external `/api/*` to port 8001, never to Next.js's port 3000. It now does two things: (1) serves `/api/auth/*` directly (pre-existing customer email/password login), (2) transparently reverse-proxies `/api/checkout` and `/api/admin/*` to `http://localhost:3000` (preserving cookies/headers/body) so the real Next.js logic runs unchanged. **This proxy is an Emergent-preview-only accommodation — on Hostinger there is no Python service at all, Next.js serves everything directly.**
+- MongoDB (via motor, `kingdom_treatz` DB): `users`, `login_attempts` collections back customer email/password auth only. Square Orders/Customers are the source of truth for orders/CRM data — no separate order DB (per explicit user instruction, "let Square's own order state represent balance due").
 
 ## What's Been Implemented (2026-07-20)
 - Fixed critical infra bug: `/api/checkout` was 502'ing externally; now backed by a real FastAPI service on 8001.
@@ -41,15 +41,33 @@ Multi-directive brief for the "Kingdom Treatz" bakery site (acting as a multi-di
 - **Important finding applied**: Since Oct 1, 2025 Square requires Secure Contexts + a proper Content-Security-Policy for all Web Payments SDK integrations. Added CSP header (`/checkout` route) in `next.config.ts` allowlisting `web.squarecdn.com` / `sandbox.web.squarecdn.com` (script-src, frame-src), `pci-connect.squareup(sandbox).com` (connect-src), and Square's font CDN. Verified via browser console — no CSP violations, Square SDK script loads and executes correctly (only remaining error is the expected placeholder App ID format error).
 - Site is HTTPS-served already (Secure Context requirement met).
 
+## What's Been Implemented (2026-07-20, cont'd 3 — major feature)
+- **Pickup cutoff logic** (`src/lib/pickup.ts`): shared `getAvailablePickupDates()` (luxon, America/New_York) — Fri/Sat pickup only, Wednesday 9 PM cutoff, rolls forward weekly, no hardcoded dates. `PICKUP_WINDOWS` (friday/saturday hour text) are explicit `TBD` placeholders — **owner must fill in real hours before go-live**. Used by both `/checkout` and `/admin/take-payment`, server-validated (`isValidPickupSelection`) so a tampered date can never reach Square.
+- **Square Order + Customer creation** (`src/lib/squareOrders.ts`, official `square` npm SDK): checkout now upserts a Customer by email, creates an OPEN Order with line items + PICKUP fulfillment (customer_id, resolved pickup date, window note), then creates a Payment referencing that order_id — replacing the old raw-fetch payment-only flow. Deposit support (50%, `autocomplete:false`) is available for admin `take-payment` only; customer-facing `/checkout` still stays full-payment-only (per earlier explicit user decision to remove customer deposit UI) — **flagging this to user: the new spec's section B describes deposit orders generally; implemented deposit capability in the admin/CRM layer only, customer checkout unchanged. Confirm if customer-facing deposit should return.**
+- **Staff admin/CRM portal** (`/admin/*`, `/api/admin/*`): single shared `ADMIN_PASSCODE` (currently `kingdomtreatz-staff-2026`, **must be changed before go-live**), signed JWT session cookie (`ADMIN_SESSION_SECRET`), in-memory rate limiting (5 attempts/15min/IP). `src/proxy.ts` (Next 16's middleware.ts) protects all `/admin/*` pages + `/api/admin/*` routes. Pages: dashboard (upcoming pickups grouped by date), customers (list/search/new/[id] with last/next order + transaction statement + archive), orders (list/[id] with mark fulfilled/canceled, collect remaining balance, issue refunds), take-payment (virtual terminal reusing the Square card() SDK pattern, full or 50% deposit). Admin UI intentionally plain (own layout, no customer header/footer/cart).
+- **CSP header** extended to also cover `/admin/:path*` (previously only `/checkout`). Added Hostinger LiteSpeed fallback at `/app/frontend/.htaccess` in case the proxy strips Next.js's header — verify in production with `curl -I` and delete if unnecessary.
+- Tested via testing_agent (iteration 3): 14/14 backend pytest pass, all admin/checkout/pickup/CSP/regression checks pass. Two minor items found & fixed: (1) CSP was blocking Cloudflare's analytics beacon — added `static.cloudflareinsights.com` to script-src/connect-src; (2) admin rate-limiter didn't reset failure count after a lockout expired — fixed so a single post-lockout failure doesn't immediately re-lock.
+
 ## Deferred / Backlog
-- **P0**: User to provide real Square Sandbox credentials (`SQUARE_ACCESS_TOKEN`, `NEXT_PUBLIC_SQUARE_APPLICATION_ID`, `LOCATION_ID`) in `/app/backend/.env` and `/app/frontend/.env` to fully test card tokenization + payment.
+- **P0**: User to provide real Square credentials: `SQUARE_ACCESS_TOKEN`, `SQUARE_LOCATION_ID`, `SQUARE_ENVIRONMENT`, `NEXT_PUBLIC_SQUARE_APPLICATION_ID`, `NEXT_PUBLIC_SQUARE_LOCATION_ID` — see "New env vars" below for exact file/keys.
+- **P0**: Owner must set real `PICKUP_WINDOWS.friday` / `.saturday` hour text in `src/lib/pickup.ts` before go-live (currently `TBD` placeholders).
+- **P0**: Change `ADMIN_PASSCODE` from the current placeholder (`kingdomtreatz-staff-2026`) to a real staff passcode before go-live.
+- **P0**: Confirm with user whether customer-facing `/checkout` should regain a 50% deposit option (this session's spec described deposit orders generally; deposit capability was only added to the admin/take-payment side, customer checkout intentionally left as full-payment-only per the earlier explicit removal request).
+- **P1**: (Optional/phase 2, explicitly deferred by user) Square webhook receiver (`payment.updated`, `refund.updated`) so `/admin` reflects changes made directly in Square's dashboard without a manual refresh.
 - **P1**: More product photos still needed for: Brown Butter Pound Cake, Sweet Potato Pie/Tarts, Pecan Pie, Peach Cobbler, and all Cookies category items (currently fall back to the generic cookies.png photo).
-- **P1**: User to provide final Mission Statement + Founder bio copy for `/learn-more` (mission copy now live; founder bio text still placeholder, photo is live).
+- **P1**: User to provide final Founder bio copy for `/learn-more` (mission copy + founder photo are now live; founder bio text still placeholder).
 - **P2**: Consider zustand `persist` middleware for cart so it survives hard refresh (currently in-memory, non-blocking).
-- **P2**: Add `data-testid` to checkout form inputs (name/phone/email/pickup-date) and product add-to-cart buttons for more reliable E2E testing (flagged by testing_agent).
-- **P2**: No order history/admin dashboard yet — orders aren't persisted to MongoDB, only sent to Square + emailed. Add if user wants account order history.
+- **P2**: No order history on the customer `/account` page yet (orders live in Square, not linked to the customer login system — the two are intentionally separate per this session's "no new customer login" instruction).
 - **P3**: `/api/auth/register` has no rate-limiting (only login has brute-force lockout) — low-risk spam vector, add if abuse observed.
+- **P3**: Admin rate-limiter and pickup-cutoff math both work correctly but are per-Node-process (in-memory) — fine for Hostinger's single-instance deploy, revisit if horizontally scaled.
+
+## New Env Vars To Set (2026-07-20, cont'd 3)
+- `/app/frontend/.env` → `ADMIN_PASSCODE` (change from placeholder), `ADMIN_SESSION_SECRET` (already auto-generated, safe to keep or rotate).
+- `/app/frontend/.env` → `SQUARE_ACCESS_TOKEN`, `SQUARE_LOCATION_ID`, `SQUARE_ENVIRONMENT` (server-only, used by `/api/checkout` and all `/api/admin/*` routes).
+- `/app/frontend/.env` → `NEXT_PUBLIC_SQUARE_APPLICATION_ID`, `NEXT_PUBLIC_SQUARE_LOCATION_ID`, `NEXT_PUBLIC_SQUARE_ENVIRONMENT` (client-side, used by the Web Payments SDK card form on `/checkout` and `/admin/take-payment`).
+- On Hostinger production: enter all of the above in hPanel's Node.js App → Environment Variables screen (never commit `.env` to GitHub).
+- `src/lib/pickup.ts` → `PICKUP_WINDOWS.friday` / `.saturday` are code constants, not env vars — edit directly.
 
 ## Test Credentials
-No pre-seeded accounts. Auth is self-serve via `/register`. Test account used during QA: `qa.tester@example.com` / `testpass123` (created by testing_agent, may not persist across DB resets).
+No pre-seeded customer accounts. Customer auth is self-serve via `/register`. Admin passcode: `kingdomtreatz-staff-2026` (change before go-live).
 

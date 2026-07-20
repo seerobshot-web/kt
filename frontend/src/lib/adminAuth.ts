@@ -30,8 +30,12 @@ const attempts = new Map<string, { count: number; lockedUntil: number | null }>(
 
 export function checkRateLimit(ip: string): { allowed: boolean; retryAfterSeconds?: number } {
   const record = attempts.get(ip);
-  if (record?.lockedUntil && record.lockedUntil > Date.now()) {
-    return { allowed: false, retryAfterSeconds: Math.ceil((record.lockedUntil - Date.now()) / 1000) };
+  if (record?.lockedUntil) {
+    if (record.lockedUntil > Date.now()) {
+      return { allowed: false, retryAfterSeconds: Math.ceil((record.lockedUntil - Date.now()) / 1000) };
+    }
+    // Lockout window has passed — clear it so the next failure starts a fresh count.
+    attempts.delete(ip);
   }
   return { allowed: true };
 }

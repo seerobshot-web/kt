@@ -2,9 +2,9 @@ import type { NextConfig } from "next";
 
 const squareCspDirectives = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://web.squarecdn.com https://sandbox.web.squarecdn.com",
+  "script-src 'self' 'unsafe-inline' https://web.squarecdn.com https://sandbox.web.squarecdn.com https://static.cloudflareinsights.com",
   "frame-src 'self' https://web.squarecdn.com https://sandbox.web.squarecdn.com",
-  "connect-src 'self' https://web.squarecdn.com https://sandbox.web.squarecdn.com https://pci-connect.squareup.com https://pci-connect.squareupsandbox.com",
+  "connect-src 'self' https://web.squarecdn.com https://sandbox.web.squarecdn.com https://pci-connect.squareup.com https://pci-connect.squareupsandbox.com https://static.cloudflareinsights.com",
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' https://square-fonts-production-f.squarecdn.com https://d1g145x70srn7h.cloudfront.net data:",
   "img-src 'self' data: https://web.squarecdn.com https://sandbox.web.squarecdn.com",
