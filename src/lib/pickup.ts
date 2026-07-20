@@ -2,10 +2,12 @@ import { DateTime } from 'luxon';
 
 export const TIME_ZONE = 'America/New_York';
 
-// TODO(owner): Replace these placeholders with the real pickup windows before go-live.
+// Fallback text only — real pickup windows are read live from the Square
+// location's business hours (see src/lib/squareHours.ts). This is used only
+// if Square isn't configured yet or the Locations API call fails.
 export const PICKUP_WINDOWS = {
-  friday: 'TBD — set real pickup hours (e.g. "4:00 PM - 6:00 PM")',
-  saturday: 'TBD — set real pickup hours (e.g. "10:00 AM - 12:00 PM")',
+  friday: 'Pickup hours to be confirmed — contact us',
+  saturday: 'Pickup hours to be confirmed — contact us',
 } as const;
 
 export type PickupDay = 'friday' | 'saturday';

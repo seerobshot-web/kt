@@ -2,7 +2,8 @@ import { randomUUID } from 'crypto';
 import { DateTime } from 'luxon';
 import { getSquareClient, getSquareLocationId } from './square';
 import { catalog } from './catalog';
-import { PICKUP_WINDOWS, TIME_ZONE, type PickupDay } from './pickup';
+import { TIME_ZONE, type PickupDay } from './pickup';
+import { getPickupWindows } from './squareHours';
 
 export interface CartLine {
   id: string;
@@ -75,11 +76,13 @@ export async function createPickupOrder({
   const locationId = getSquareLocationId();
   const lineItems = buildLineItems(items);
 
-  // Real pickup hours are still TBD (see src/lib/pickup.ts); 5 PM is a
-  // placeholder so Square has a valid timestamp. The human-readable window
-  // text lives in the fulfillment note below.
+  // Pickup hours come straight from the Square location's own business hours
+  // (see src/lib/squareHours.ts) — falls back to a 5 PM placeholder only if
+  // Square isn't configured yet or has no hours set for that day.
+  const window = (await getPickupWindows())[pickupDay];
+  const [startHour, startMinute] = (window.startLocalTime ?? '17:00').split(':').map(Number);
   const pickupAt = DateTime.fromISO(pickupDateISO, { zone: TIME_ZONE })
-    .set({ hour: 17, minute: 0, second: 0, millisecond: 0 })
+    .set({ hour: startHour, minute: startMinute || 0, second: 0, millisecond: 0 })
     .toISO();
 
   const result = await client.orders.create({
@@ -111,7 +114,7 @@ export async function createPickupOrder({
               phoneNumber: customerPhone,
             },
             pickupAt: pickupAt ?? undefined,
-            note: `Pickup window (${pickupDay}): ${PICKUP_WINDOWS[pickupDay]}`,
+            note: `Pickup window (${pickupDay}): ${window.display}`,
           },
         },
       ],

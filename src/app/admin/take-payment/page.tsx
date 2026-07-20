@@ -18,6 +18,17 @@ export default function TakePaymentPage() {
   const availability = useMemo(() => getAvailablePickupDates(), []);
   const pickupOption = availability[pickupDay];
 
+  // Date/label math is pure and instant (above); the human-readable window
+  // text comes from Square's own business hours, fetched once from the server.
+  const [liveWindows, setLiveWindows] = useState<{ friday: string; saturday: string } | null>(null);
+  useEffect(() => {
+    fetch('/api/pickup-availability')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { if (data) setLiveWindows({ friday: data.friday.window, saturday: data.saturday.window }); })
+      .catch(() => {});
+  }, []);
+  const windowLabel = liveWindows ? liveWindows[pickupDay] : pickupOption.window;
+
   const items = useMemo(
     () => Object.entries(quantities).filter(([, qty]) => qty > 0).map(([id, quantity]) => ({ id, quantity })),
     [quantities]
@@ -103,7 +114,7 @@ export default function TakePaymentPage() {
           <option value="friday">Friday — {availability.friday.label}</option>
           <option value="saturday">Saturday — {availability.saturday.label}</option>
         </select>
-        <p className="text-xs text-gray-400">Window: {pickupOption.window}</p>
+        <p className="text-xs text-gray-400">Window: {windowLabel}</p>
         <label className="flex items-center gap-2 text-sm">
           <input data-testid="admin-tp-deposit-checkbox" type="checkbox" checked={depositOnly} onChange={(e) => setDepositOnly(e.target.checked)} />
           Collect 50% deposit only (balance due at pickup)
