@@ -4,7 +4,8 @@ import { useState, useMemo, useEffect, useRef, FormEvent } from 'react';
 import { useCartStore } from '@/store/cartStore';
 import { getAvailablePickupDates } from '@/lib/pickup';
 import Link from 'next/link';
-import { ArrowLeft, CheckCircle2, ShieldCheck } from 'lucide-react';
+import Image from 'next/image';
+import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 
 type SquarePayments = any;
 
@@ -302,9 +303,15 @@ export default function CheckoutPage() {
                       </div>
                     )}
                     <p className="mt-2 font-sans text-xs text-kt-chocolate/60">Payments are processed securely by Square. Card details never touch our servers.</p>
-                    <div data-testid="square-approved-badge" className="mt-4 inline-flex items-center gap-2 px-3 py-2 bg-kt-champagne/60 border border-kt-chocolate/10 rounded-sm">
-                      <ShieldCheck className="w-4 h-4 text-kt-rouge" />
-                      <span className="font-display text-[10px] tracking-wider uppercase text-kt-chocolate/70">Square Brand Approved &middot; Secure Checkout</span>
+                    <div data-testid="square-approved-badge" className="mt-4 inline-flex items-center">
+                      <Image
+                        src="https://images.ctfassets.net/1nw4q0oohfju/7ntgEwkWoRRGdTu91jr9yd/62d9d5b8a06107447c15cbbfffd2abb7/brand_black-f67a0600187e707deb22521e86452dd6746851870f815e9e454423b9e5b8a6d3.png"
+                        alt="Built with Square"
+                        width={140}
+                        height={28}
+                        unoptimized
+                        className="h-6 w-auto"
+                      />
                     </div>
                   </div>
 
