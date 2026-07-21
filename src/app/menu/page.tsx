@@ -43,7 +43,7 @@ export default function MenuPage() {
       </div>
 
       {/* Sticky Category Tabs */}
-      <div className="sticky top-20 z-40 bg-kt-champagne/95 backdrop-blur-md border-b border-kt-chocolate/10 shadow-sm">
+      <div className="sticky top-36 z-40 bg-kt-champagne/95 backdrop-blur-md border-b border-kt-chocolate/10 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-8 overflow-x-auto py-4 scrollbar-hide">
             {categories.map((cat, idx) => (
