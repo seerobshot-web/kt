@@ -7,7 +7,7 @@ const squareCspDirectives = [
   "connect-src 'self' https://web.squarecdn.com https://sandbox.web.squarecdn.com https://pci-connect.squareup.com https://pci-connect.squareupsandbox.com https://static.cloudflareinsights.com",
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' https://square-fonts-production-f.squarecdn.com https://d1g145x70srn7h.cloudfront.net data:",
-  "img-src 'self' data: https://web.squarecdn.com https://sandbox.web.squarecdn.com",
+  "img-src 'self' data: https://web.squarecdn.com https://sandbox.web.squarecdn.com https://images.ctfassets.net",
 ].join('; ');
 
 const nextConfig: NextConfig = {
