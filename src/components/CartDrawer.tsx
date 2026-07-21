@@ -25,7 +25,7 @@ export default function CartDrawer() {
         <div className="px-6 py-6 border-b border-kt-chocolate/10 flex items-center justify-between bg-kt-champagne">
           <h2 className="font-serif text-2xl font-bold text-kt-chocolate flex items-center gap-2">
             <ShoppingBag className="w-5 h-5" />
-            Your Royal Feast
+            Your Cart
           </h2>
           <button 
             onClick={() => setDrawerOpen(false)}
@@ -41,11 +41,11 @@ export default function CartDrawer() {
             <div className="h-full flex flex-col items-center justify-center text-kt-chocolate/50 space-y-4">
               <ShoppingBag className="w-12 h-12 opacity-20" />
               <p className="font-sans text-lg">Your cart is currently empty.</p>
-              <button 
+              <button
                 onClick={() => setDrawerOpen(false)}
                 className="text-kt-rouge font-display text-sm tracking-wider uppercase border-b border-kt-rouge pb-1"
               >
-                Continue Browsing
+                Browse
               </button>
             </div>
           ) : (
@@ -95,14 +95,14 @@ export default function CartDrawer() {
               <span className="font-serif font-bold text-2xl text-kt-chocolate">${subtotal.toFixed(2)}</span>
             </div>
             <p className="font-sans text-xs text-kt-chocolate/50 mb-4 text-center">
-              Payment is not collected today. We will confirm your order details manually.
+              Book pickup up to 30 days ahead. Your card is charged securely at checkout.
             </p>
-            <Link 
-              href="/checkout" 
+            <Link
+              href="/checkout"
               onClick={() => setDrawerOpen(false)}
               className="block w-full py-4 bg-kt-chocolate text-kt-champagne text-center font-display text-sm tracking-wider uppercase rounded-sm hover:bg-kt-chocolate/90 transition-colors"
             >
-              Initiate Order Request
+              Checkout
             </Link>
           </div>
         )}

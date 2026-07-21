@@ -34,7 +34,7 @@ export default function SpecialsPage() {
             required
           />
           <button type="submit" className="px-8 py-4 bg-kt-rouge text-white font-display text-sm tracking-wider uppercase rounded-sm hover:bg-kt-rouge/90 transition-colors whitespace-nowrap">
-            Keep Me Posted
+            Notify
           </button>
         </form>
 
@@ -45,7 +45,7 @@ export default function SpecialsPage() {
             <p className="font-sans text-kt-champagne/70 mb-4 text-sm">Toasted pecans suspended in a rich, buttery caramel filling, in a flaky handmade crust.</p>
             <div className="flex justify-between items-center">
               <span className="font-sans font-bold">$35.00</span>
-              <Link href="/menu" className="text-kt-blush font-display text-xs tracking-wider uppercase hover:text-white transition-colors">Order Online</Link>
+              <Link href="/menu" className="text-kt-blush font-display text-xs tracking-wider uppercase hover:text-white transition-colors">Order</Link>
             </div>
           </div>
           <div className="bg-white/5 border border-white/10 p-8 rounded-sm">
@@ -53,7 +53,7 @@ export default function SpecialsPage() {
             <p className="font-sans text-kt-champagne/70 mb-4 text-sm">Graham, chocolate, and toasted marshmallow wrapped in a golden cookie.</p>
             <div className="flex justify-between items-center">
               <span className="font-sans font-bold">$4.00</span>
-              <Link href="/menu" className="text-kt-blush font-display text-xs tracking-wider uppercase hover:text-white transition-colors">Order Online</Link>
+              <Link href="/menu" className="text-kt-blush font-display text-xs tracking-wider uppercase hover:text-white transition-colors">Order</Link>
             </div>
           </div>
         </div>

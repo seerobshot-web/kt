@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef, FormEvent } from 'react';
 import { useCartStore } from '@/store/cartStore';
-import { getAvailablePickupDates, type PickupDay } from '@/lib/pickup';
+import { getAvailablePickupDates } from '@/lib/pickup';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle2, ShieldCheck } from 'lucide-react';
 
@@ -26,7 +26,7 @@ export default function CheckoutPage() {
     name: '',
     email: '',
     phone: '',
-    pickupDay: '' as PickupDay | ''
+    pickupDate: '' // YYYY-MM-DD, matches one of pickupAvailability.options
   });
 
   // Tracks the Square card input lifecycle so the UI never shows a dead,
@@ -39,9 +39,11 @@ export default function CheckoutPage() {
 
   const hasItems = items.length > 0;
 
-  // Two selectable pickup dates (this or next Fri/Sat), governed by the
-  // Wednesday 9 PM America/New_York cutoff shared with the admin portal.
+  // Every Friday/Saturday up to 30 days out, governed by the Wednesday 9 PM
+  // America/New_York cutoff shared with the admin portal — lets clients book
+  // ahead for events instead of only the very next weekend.
   const pickupAvailability = useMemo(() => getAvailablePickupDates(), []);
+  const selectedPickupOption = pickupAvailability.options.find((opt) => opt.date === formData.pickupDate);
 
   useEffect(() => {
     // The #card-container div only exists while the cart has items, so the
@@ -141,7 +143,7 @@ export default function CheckoutPage() {
 
     try {
       // Ensure pickup date set
-      if (!formData.pickupDay) throw new Error('Please select a pickup date');
+      if (!selectedPickupOption) throw new Error('Please select a pickup date');
 
       if (cardStatus !== 'ready') {
         throw new Error(cardStatusMessage || 'The card form is not ready yet. Please wait a moment and try again.');
@@ -158,8 +160,8 @@ export default function CheckoutPage() {
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
-          pickupDate: pickupAvailability[formData.pickupDay].date,
-          pickupDay: formData.pickupDay,
+          pickupDate: selectedPickupOption!.date,
+          pickupDay: selectedPickupOption!.day,
         },
         items: payloadItems,
         sourceId,
@@ -191,12 +193,12 @@ export default function CheckoutPage() {
     return (
       <div className="min-h-[80vh] bg-kt-champagne flex flex-col items-center justify-center p-4">
         <CheckCircle2 className="w-20 h-20 text-kt-emerald mb-6" />
-        <h1 className="font-serif text-4xl font-bold text-kt-chocolate mb-4 text-center">Your Royal Decree is Received</h1>
+        <h1 className="font-serif text-4xl font-bold text-kt-chocolate mb-4 text-center">Your Order Is Confirmed</h1>
         <p className="font-sans text-lg text-kt-chocolate/80 max-w-lg text-center mb-8">
-          Thank you, {formData.name}! Your order request and payment have been received. We will contact you shortly to confirm pickup details.
+          Thank you, {formData.name}! Your payment has been received and your order is on the calendar. We&apos;ll see you at pickup &mdash; reach out anytime at info@kingdomtreatzrva.com.
         </p>
         <Link href="/" className="px-8 py-4 bg-kt-chocolate text-kt-champagne font-display tracking-wider text-sm uppercase rounded-sm hover:bg-kt-chocolate/90 transition-colors">
-          Return Home
+          Home
         </Link>
       </div>
     );
@@ -206,16 +208,16 @@ export default function CheckoutPage() {
     <div className="bg-kt-champagne min-h-screen py-16 px-4">
       <div className="max-w-5xl mx-auto">
         <Link href="/menu" className="inline-flex items-center text-kt-rouge hover:text-kt-chocolate transition-colors font-display text-xs tracking-wider uppercase mb-8">
-          <ArrowLeft className="w-4 h-4 mr-2" /> Back to Menu
+          <ArrowLeft className="w-4 h-4 mr-2" /> Menu
         </Link>
 
-        <h1 className="font-serif text-4xl md:text-5xl font-bold text-kt-chocolate mb-12">Complete Your Request</h1>
+        <h1 className="font-serif text-4xl md:text-5xl font-bold text-kt-chocolate mb-12">Checkout</h1>
 
         {items.length === 0 ? (
           <div className="text-center py-20 bg-white border border-kt-chocolate/10 rounded-sm">
             <p className="font-sans text-xl text-kt-chocolate/60 mb-6">Your cart is currently empty.</p>
             <Link href="/menu" className="px-8 py-4 bg-kt-rouge text-white font-display tracking-wider text-sm uppercase rounded-sm hover:bg-kt-rouge/90 transition-colors">
-              Browse The Menu
+              Browse
             </Link>
           </div>
         ) : (
@@ -268,20 +270,21 @@ export default function CheckoutPage() {
                   </div>
 
                   <div>
-                    <label className="block font-display text-xs tracking-wider uppercase mb-2 text-kt-chocolate/80">Select Weekend Pickup Date *</label>
-                    <select 
+                    <label className="block font-display text-xs tracking-wider uppercase mb-2 text-kt-chocolate/80">Select Pickup Date *</label>
+                    <select
                       required
-                      value={formData.pickupDay}
-                      onChange={(e) => setFormData({...formData, pickupDay: e.target.value as PickupDay})}
+                      value={formData.pickupDate}
+                      onChange={(e) => setFormData({...formData, pickupDate: e.target.value})}
                       className="w-full px-4 py-3 bg-kt-champagne/50 border border-kt-chocolate/20 rounded-sm focus:outline-none focus:border-kt-rouge focus:bg-white transition-colors font-sans"
                     >
                       <option value="" disabled>Choose a Friday or Saturday...</option>
-                      <option value="friday">{pickupAvailability.friday.label}</option>
-                      <option value="saturday">{pickupAvailability.saturday.label}</option>
+                      {pickupAvailability.options.map((opt) => (
+                        <option key={opt.date} value={opt.date}>{opt.label}</option>
+                      ))}
                     </select>
-                    <p className="mt-2 font-sans text-xs text-kt-chocolate/60">Orders must be placed by Wednesday 9 PM for the upcoming weekend. Payment will be collected after confirmation.</p>
+                    <p className="mt-2 font-sans text-xs text-kt-chocolate/60">Book up to 30 days ahead. Orders must be placed by Wednesday 9 PM for that weekend&apos;s pickup.</p>
                     {pickupAvailability.cutoffPassed && (
-                      <p data-testid="pickup-cutoff-note" className="mt-2 font-sans text-xs text-kt-rouge">Orders for this week have closed; you're ordering for the following weekend.</p>
+                      <p data-testid="pickup-cutoff-note" className="mt-2 font-sans text-xs text-kt-rouge">Orders for this week have closed; the earliest pickup is now the following weekend.</p>
                     )}
                   </div>
 
@@ -311,7 +314,7 @@ export default function CheckoutPage() {
                     disabled={status === 'submitting' || cardStatus !== 'ready'}
                     className="w-full py-4 mt-8 bg-kt-chocolate text-kt-champagne font-display text-sm tracking-wider uppercase rounded-sm hover:bg-kt-chocolate/90 transition-colors disabled:opacity-60"
                   >
-                    {status === 'submitting' ? 'Processing Payment...' : 'Pay Full Amount'}
+                    {status === 'submitting' ? 'Processing...' : 'Pay'}
                   </button>
                 </form>
               </div>

@@ -55,7 +55,7 @@ export default function AdminLoginPage() {
             disabled={submitting}
             className="w-full py-2 bg-gray-900 text-white rounded hover:bg-gray-700 transition-colors disabled:opacity-60"
           >
-            {submitting ? 'Checking...' : 'Log In'}
+            {submitting ? 'Checking...' : 'Login'}
           </button>
         </form>
       </div>

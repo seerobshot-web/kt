@@ -10,8 +10,7 @@ export async function GET() {
   const windows = await getPickupWindows();
 
   return NextResponse.json({
-    friday: { ...availability.friday, window: windows.friday.display },
-    saturday: { ...availability.saturday, window: windows.saturday.display },
+    options: availability.options.map((opt) => ({ ...opt, window: windows[opt.day].display })),
     cutoffPassed: availability.cutoffPassed,
     cutoffLabel: availability.cutoffLabel,
   });

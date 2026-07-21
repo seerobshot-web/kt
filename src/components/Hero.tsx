@@ -24,10 +24,10 @@ export default function Hero() {
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link href="/menu" className="inline-flex items-center justify-center px-8 py-4 bg-kt-rouge text-white font-display text-sm tracking-wider uppercase rounded-sm hover:bg-kt-rouge/90 transition-colors shadow-lg">
-            Order Online
+            Order
           </Link>
           <Link href="mailto:info@kingdomtreatzrva.com" className="inline-flex items-center justify-center px-8 py-4 bg-transparent border-2 border-kt-champagne text-kt-champagne font-display text-sm tracking-wider uppercase rounded-sm hover:bg-kt-champagne hover:text-kt-chocolate transition-colors backdrop-blur-sm">
-            Or Email to Order
+            Email
           </Link>
         </div>
       </div>

@@ -107,7 +107,7 @@ export default function LearnMorePage() {
             <textarea rows={5} className="w-full px-4 py-3 bg-white border border-kt-chocolate/20 rounded-sm focus:outline-none focus:border-kt-rouge"></textarea>
           </div>
           <button type="submit" className="w-full py-4 bg-kt-chocolate text-kt-champagne font-display text-sm tracking-wider uppercase rounded-sm hover:bg-kt-chocolate/90 transition-colors">
-            Send Message
+            Send
           </button>
         </form>
       </section>
