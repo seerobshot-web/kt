@@ -27,9 +27,9 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 w-full bg-kt-champagne/95 backdrop-blur-md border-b border-kt-chocolate/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
-          {/* Wordmark Logo */}
-          <Link href="/" data-testid="brand-logo-link" className="relative flex items-center h-14 w-36 shrink-0">
+        <div className="flex justify-between items-center h-36">
+          {/* Wordmark Logo — doubled from h-14/w-36 */}
+          <Link href="/" data-testid="brand-logo-link" className="relative flex items-center h-28 w-72 shrink-0">
             <Image
               src="/images/logo.png"
               alt="Kingdom Treatz"
