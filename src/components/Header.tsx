@@ -61,8 +61,8 @@ export default function Header() {
             </div>
 
             <Link href="/specials" className="text-kt-chocolate hover:text-kt-rouge transition-colors">SPECIALS</Link>
-            <Link href="/learn-more" className="text-kt-chocolate hover:text-kt-rouge transition-colors">LEARN MORE</Link>
-            <Link href="/menu" className="text-kt-chocolate hover:text-kt-rouge transition-colors">ORDER ONLINE</Link>
+            <Link href="/learn-more" className="text-kt-chocolate hover:text-kt-rouge transition-colors">STORY</Link>
+            <Link href="/menu" className="text-kt-chocolate hover:text-kt-rouge transition-colors">ORDER</Link>
           </nav>
 
           {/* Actions */}
@@ -122,8 +122,8 @@ export default function Header() {
               )}
 
               <Link href="/specials" onClick={closeMobile} className="px-2 py-3 text-kt-chocolate hover:text-kt-rouge transition-colors border-b border-kt-chocolate/10">SPECIALS</Link>
-              <Link href="/learn-more" onClick={closeMobile} className="px-2 py-3 text-kt-chocolate hover:text-kt-rouge transition-colors border-b border-kt-chocolate/10">LEARN MORE</Link>
-              <Link href="/menu" onClick={closeMobile} className="px-2 py-3 text-kt-chocolate hover:text-kt-rouge transition-colors">ORDER ONLINE</Link>
+              <Link href="/learn-more" onClick={closeMobile} className="px-2 py-3 text-kt-chocolate hover:text-kt-rouge transition-colors border-b border-kt-chocolate/10">STORY</Link>
+              <Link href="/menu" onClick={closeMobile} className="px-2 py-3 text-kt-chocolate hover:text-kt-rouge transition-colors">ORDER</Link>
             </div>
           </nav>
         )}

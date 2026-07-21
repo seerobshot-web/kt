@@ -20,9 +20,9 @@ export default function Footer() {
             <h4 className="font-display tracking-wider text-sm mb-6 text-kt-blush">EXPLORE</h4>
             <ul className="space-y-3 font-sans">
               <li><Link href="/" className="hover:text-kt-rouge transition-colors">Home</Link></li>
-              <li><Link href="/menu" className="hover:text-kt-rouge transition-colors">The Menu</Link></li>
-              <li><Link href="/specials" className="hover:text-kt-rouge transition-colors">Seasonal Specials</Link></li>
-              <li><Link href="/learn-more" className="hover:text-kt-rouge transition-colors">Learn More</Link></li>
+              <li><Link href="/menu" className="hover:text-kt-rouge transition-colors">Menu</Link></li>
+              <li><Link href="/specials" className="hover:text-kt-rouge transition-colors">Specials</Link></li>
+              <li><Link href="/learn-more" className="hover:text-kt-rouge transition-colors">Story</Link></li>
             </ul>
           </div>
 

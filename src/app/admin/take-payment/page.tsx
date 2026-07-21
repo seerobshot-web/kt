@@ -9,25 +9,31 @@ export default function TakePaymentPage() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [pickupDay, setPickupDay] = useState<'friday' | 'saturday'>('friday');
+  // Every Friday/Saturday up to 30 days out, same policy as customer checkout.
+  const availability = useMemo(() => getAvailablePickupDates(), []);
+  const [pickupDate, setPickupDate] = useState(() => availability.options[0]?.date || '');
   const [depositOnly, setDepositOnly] = useState(false);
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const cardRef = useRef<SquareCardInputHandle>(null);
 
-  const availability = useMemo(() => getAvailablePickupDates(), []);
-  const pickupOption = availability[pickupDay];
+  const pickupOption = availability.options.find((opt) => opt.date === pickupDate) || availability.options[0];
 
   // Date/label math is pure and instant (above); the human-readable window
   // text comes from Square's own business hours, fetched once from the server.
-  const [liveWindows, setLiveWindows] = useState<{ friday: string; saturday: string } | null>(null);
+  const [liveWindows, setLiveWindows] = useState<Record<string, string> | null>(null);
   useEffect(() => {
     fetch('/api/pickup-availability')
       .then((res) => (res.ok ? res.json() : null))
-      .then((data) => { if (data) setLiveWindows({ friday: data.friday.window, saturday: data.saturday.window }); })
+      .then((data) => {
+        if (!data) return;
+        const byDay: Record<string, string> = {};
+        data.options.forEach((opt: { day: string; window: string }) => { byDay[opt.day] = opt.window; });
+        setLiveWindows(byDay);
+      })
       .catch(() => {});
   }, []);
-  const windowLabel = liveWindows ? liveWindows[pickupDay] : pickupOption.window;
+  const windowLabel = pickupOption ? (liveWindows ? liveWindows[pickupOption.day] : pickupOption.window) : '';
 
   const items = useMemo(
     () => Object.entries(quantities).filter(([, qty]) => qty > 0).map(([id, quantity]) => ({ id, quantity })),
@@ -46,12 +52,13 @@ export default function TakePaymentPage() {
     setMessage('');
     try {
       if (items.length === 0) throw new Error('Add at least one item.');
+      if (!pickupOption) throw new Error('Select a pickup date.');
       const sourceId = await cardRef.current!.tokenize();
       const res = await fetch('/api/admin/take-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          customer: { name, email, phone, pickupDate: pickupOption.date, pickupDay },
+          customer: { name, email, phone, pickupDate: pickupOption.date, pickupDay: pickupOption.day },
           items,
           sourceId,
           depositOnly,
@@ -78,7 +85,7 @@ export default function TakePaymentPage() {
 
       {availability.cutoffPassed && (
         <div className="mb-6 p-3 bg-yellow-50 border border-yellow-300 text-yellow-800 text-sm rounded">
-          This week's ordering window has closed — this order is for the following weekend.
+          This week&apos;s ordering window has closed — this order is for the following weekend.
         </div>
       )}
 
@@ -110,11 +117,13 @@ export default function TakePaymentPage() {
 
       <div className="bg-white rounded shadow-sm border border-gray-200 p-4 mb-6 space-y-3">
         <h2 className="font-medium text-gray-900">Pickup</h2>
-        <select data-testid="admin-tp-pickup-day" value={pickupDay} onChange={(e) => setPickupDay(e.target.value as 'friday' | 'saturday')} className="w-full px-3 py-2 border border-gray-300 rounded text-sm">
-          <option value="friday">Friday — {availability.friday.label}</option>
-          <option value="saturday">Saturday — {availability.saturday.label}</option>
+        <select data-testid="admin-tp-pickup-day" value={pickupDate} onChange={(e) => setPickupDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded text-sm">
+          {availability.options.map((opt) => (
+            <option key={opt.date} value={opt.date}>{opt.day === 'friday' ? 'Friday' : 'Saturday'} — {opt.label}</option>
+          ))}
         </select>
         <p className="text-xs text-gray-400">Window: {windowLabel}</p>
+        <p className="text-xs text-gray-400">Bookable up to 30 days ahead — pick any listed date.</p>
         <label className="flex items-center gap-2 text-sm">
           <input data-testid="admin-tp-deposit-checkbox" type="checkbox" checked={depositOnly} onChange={(e) => setDepositOnly(e.target.checked)} />
           Collect 50% deposit only (balance due at pickup)

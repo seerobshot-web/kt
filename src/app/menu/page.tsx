@@ -34,8 +34,9 @@ export default function MenuPage() {
       <div className="bg-kt-chocolate text-kt-champagne py-16 text-center">
         <h1 className="font-serif text-5xl font-bold mb-4">Order Online</h1>
         <p className="font-sans text-lg text-kt-champagne/80 max-w-2xl mx-auto px-4">
-          Handcrafted, small-batch Southern desserts for local Richmond pickup. Orders close each
-          Wednesday at 9:00 PM for that weekend&apos;s Friday/Saturday pickup &mdash; or reach us by{' '}
+          Handcrafted, small-batch Southern desserts for local Richmond pickup. Book any Friday or
+          Saturday up to 30 days out &mdash; ideal for weddings, showers, and church events planned
+          ahead. Orders for the nearest weekend close each Wednesday at 9:00 PM, or reach us by{' '}
           <a href="mailto:info@kingdomtreatzrva.com" className="text-kt-blush hover:text-kt-champagne underline transition-colors">email</a>{' '}
           if you&apos;d rather place your order that way.
         </p>

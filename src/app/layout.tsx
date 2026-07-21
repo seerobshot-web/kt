@@ -25,12 +25,12 @@ const fredoka = Fredoka({
 });
 
 export const metadata: Metadata = {
-  title: "Kingdom Treatz | Premium Custom Cakes & Desserts in Richmond, VA",
-  description: "Order luxury, small-batch desserts from Kingdom Treatz in Richmond, VA. Custom cakes, famous banana pudding, and cookies available for Friday & Saturday pickup.",
-  keywords: ["Richmond VA bakery", "custom cakes Richmond", "banana pudding RVA", "luxury desserts Richmond"],
+  title: "Kingdom Treatz | Southern Bakery in Richmond, VA",
+  description: "Kingdom Treatz is a Christian-owned, small-batch Southern dessert bakery in Richmond, VA. Order online or by phone/email, up to 30 days ahead, for Friday & Saturday pickup — banana pudding, pies, cakes, and cookies made from scratch.",
+  keywords: ["Richmond VA bakery", "Christian-owned bakery Richmond", "custom cakes Richmond", "banana pudding RVA", "Southern dessert bakery", "advance order cake Richmond"],
   openGraph: {
-    title: "Kingdom Treatz | Richmond's Premium Bakery",
-    description: "Order luxury, small-batch desserts for weekend pickup.",
+    title: "Kingdom Treatz | Southern Bakery in Richmond, VA",
+    description: "Handcrafted Southern desserts, made in small batches, for Friday & Saturday pickup in Richmond, VA.",
     url: "https://kingdomtreatzrva.com",
     siteName: "Kingdom Treatz",
     locale: "en_US",
@@ -42,7 +42,7 @@ const jsonLd = {
   "@context": "https://schema.org",
   "@type": "Bakery",
   "name": "Kingdom Treatz",
-  "description": "Richmond's premier luxury small-batch bakery specializing in custom cakes, signature banana pudding, and cookies.",
+  "description": "A Christian-owned, small-batch Southern dessert bakery in Richmond, VA, handcrafting banana pudding, pies, cakes, and cookies for local pickup.",
   "address": {
     "@type": "PostalAddress",
     "addressLocality": "Richmond",
