@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { computeSubtotalCents } from '@/lib/catalog';
-import { upsertCustomer, createPickupOrder, chargeOrder } from '@/lib/squareOrders';
+import { upsertCustomer, createPickupOrder, createOrderPaymentLink } from '@/lib/squareOrders';
 import { isValidPickupSelection } from '@/lib/pickup';
-import { sendOrderNotificationEmail } from '@/lib/mailer';
 import { isSquareConfigured } from '@/lib/square';
 
 const CheckoutSchema = z.object({
@@ -15,7 +14,6 @@ const CheckoutSchema = z.object({
     pickupDay: z.enum(['friday', 'saturday']),
   }),
   items: z.array(z.object({ id: z.string(), quantity: z.number().int().min(1) })).min(1),
-  sourceId: z.string().min(1),
 });
 
 export async function POST(req: NextRequest) {
@@ -24,7 +22,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ success: false, error: 'Please check your details and try again.' }, { status: 422 });
   }
-  const { customer, items, sourceId } = parsed.data;
+  const { customer, items } = parsed.data;
 
   if (!isValidPickupSelection(customer.pickupDate, customer.pickupDay)) {
     return NextResponse.json(
@@ -61,25 +59,22 @@ export async function POST(req: NextRequest) {
       customerEmail: customer.email,
       customerPhone: customer.phone,
       totalCents: subtotalCents,
-    });
-    const payment = await chargeOrder({
-      orderId: order.id!,
-      sourceId,
-      amountCents: subtotalCents,
-      buyerEmail: customer.email,
-      attachToOrder: true,
+      awaitingPayment: true,
     });
 
-    sendOrderNotificationEmail({ customer, items, subtotalCents, paymentId: payment.id, orderId: order.id }).catch((err) => {
-      console.error('Order email failed (payment succeeded):', err);
-    });
+    // Square hosts the actual payment page — the customer never enters card
+    // details on our site. Confirmation (and the notification email) happens
+    // asynchronously via the payment.updated webhook once Square reports the
+    // charge as COMPLETED; this redirect is just where the browser lands.
+    const redirectUrl = new URL(`/checkout/return?orderId=${order.id}`, req.nextUrl.origin).toString();
+    const paymentLink = await createOrderPaymentLink({ orderId: order.id!, redirectUrl });
 
-    return NextResponse.json({ success: true, paymentId: payment.id, orderId: order.id });
+    return NextResponse.json({ success: true, checkoutUrl: paymentLink.url, orderId: order.id });
   } catch (err: any) {
     console.error('Checkout error:', err);
     const detail = err?.body?.errors?.[0]?.detail || err?.errors?.[0]?.detail || err?.message;
     return NextResponse.json(
-      { success: false, error: detail || 'Your card could not be charged. Please check your details and try again.' },
+      { success: false, error: detail || 'We could not start checkout. Please check your details and try again.' },
       { status: 402 }
     );
   }

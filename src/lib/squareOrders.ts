@@ -60,6 +60,7 @@ export async function createPickupOrder({
   customerPhone,
   totalCents,
   depositCents,
+  awaitingPayment,
 }: {
   customerId: string;
   items: CartLine[];
@@ -71,6 +72,11 @@ export async function createPickupOrder({
   totalCents: number;
   // Present only for deposit orders — see the accounting note on chargeOrder().
   depositCents?: number;
+  // True for the Payment Link checkout flow, where the order exists before
+  // any payment has happened — balance starts at zero and is only advanced
+  // once the /api/webhooks/square handler sees a completed payment. Never
+  // combine with depositCents (mutually exclusive payment flows).
+  awaitingPayment?: boolean;
 }) {
   const client = getSquareClient();
   const locationId = getSquareLocationId();
@@ -99,10 +105,11 @@ export async function createPickupOrder({
       // deposit orders we track paid-so-far ourselves in order metadata
       // (still stored on the Square Order, just not via its built-in tender
       // math) instead of relying on netAmountDueMoney.
-      metadata:
-        depositCents != null
-          ? { paymentPlan: 'deposit', totalCents: String(totalCents), balancePaidCents: String(depositCents) }
-          : { paymentPlan: 'full', totalCents: String(totalCents), balancePaidCents: String(totalCents) },
+      metadata: awaitingPayment
+        ? { paymentPlan: 'awaiting_payment', totalCents: String(totalCents), balancePaidCents: '0' }
+        : depositCents != null
+        ? { paymentPlan: 'deposit', totalCents: String(totalCents), balancePaidCents: String(depositCents) }
+        : { paymentPlan: 'full', totalCents: String(totalCents), balancePaidCents: String(totalCents) },
       fulfillments: [
         {
           type: 'PICKUP',
@@ -123,6 +130,99 @@ export async function createPickupOrder({
 
   if (!result.order?.id) throw new Error('Square did not return an order id');
   return result.order;
+}
+
+// Creates a Square-hosted checkout page for an existing OPEN order. The
+// customer pays there directly, so no card ever touches our servers or the
+// browser — Square confirms completion via the payment.updated webhook
+// (src/app/api/webhooks/square/route.ts), and redirectUrl just brings the
+// customer back to a friendly confirmation page.
+export async function createOrderPaymentLink({ orderId, redirectUrl }: { orderId: string; redirectUrl: string }) {
+  const client = getSquareClient();
+  const locationId = getSquareLocationId();
+  const result = await client.checkout.paymentLinks.create({
+    idempotencyKey: randomUUID(),
+    order: { id: orderId, locationId },
+    checkoutOptions: { redirectUrl, askForShippingAddress: false },
+  });
+  if (!result.paymentLink?.url) throw new Error('Square did not return a payment link');
+  return result.paymentLink;
+}
+
+export interface CustomLineItem {
+  name: string;
+  quantity: number;
+  priceCents: number;
+}
+
+// Unlike buildLineItems, this takes arbitrary staff-entered name/price pairs
+// instead of looking items up in the fixed menu catalog — for one-off custom
+// orders (bespoke cakes, event trays) that aren't on the standard menu.
+export function buildCustomLineItems(items: CustomLineItem[]) {
+  return items.map((item) => ({
+    name: item.name,
+    quantity: String(item.quantity),
+    basePriceMoney: { amount: BigInt(item.priceCents), currency: 'USD' as const },
+  }));
+}
+
+export async function createCustomOrder({ customerId, items }: { customerId: string; items: CustomLineItem[] }) {
+  const client = getSquareClient();
+  const locationId = getSquareLocationId();
+  const result = await client.orders.create({
+    idempotencyKey: randomUUID(),
+    order: {
+      locationId,
+      customerId,
+      state: 'OPEN',
+      lineItems: buildCustomLineItems(items),
+    },
+  });
+  if (!result.order?.id) throw new Error('Square did not return an order id');
+  return result.order;
+}
+
+// Creates a draft invoice against an already-created OPEN order and
+// publishes it immediately, which is what makes Square email the customer a
+// link to the hosted payment page.
+export async function createAndPublishInvoice({
+  orderId,
+  customerId,
+  dueDate,
+  title,
+  description,
+}: {
+  orderId: string;
+  customerId: string;
+  dueDate: string; // YYYY-MM-DD, in the location's timezone
+  title?: string;
+  description?: string;
+}) {
+  const client = getSquareClient();
+  const locationId = getSquareLocationId();
+  const createResult = await client.invoices.create({
+    idempotencyKey: randomUUID(),
+    invoice: {
+      locationId,
+      orderId,
+      primaryRecipient: { customerId },
+      paymentRequests: [{ requestType: 'BALANCE', dueDate }],
+      deliveryMethod: 'EMAIL',
+      title,
+      description,
+      acceptedPaymentMethods: { card: true },
+    },
+  });
+  const invoice = createResult.invoice;
+  if (!invoice?.id || invoice.version == null) throw new Error('Square did not return an invoice');
+
+  const publishResult = await client.invoices.publish({
+    invoiceId: invoice.id,
+    version: invoice.version,
+    idempotencyKey: randomUUID(),
+  });
+  if (!publishResult.invoice) throw new Error('Square did not return the published invoice');
+  return publishResult.invoice;
 }
 
 export async function chargeOrder({

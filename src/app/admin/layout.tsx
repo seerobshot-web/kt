@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { href: '/admin/customers', label: 'Customers' },
   { href: '/admin/orders', label: 'Orders' },
   { href: '/admin/take-payment', label: 'Take Payment' },
+  { href: '/admin/invoices/new', label: 'New Invoice' },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

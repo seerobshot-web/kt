@@ -1,26 +1,17 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef, FormEvent } from 'react';
+import { useState, useMemo, FormEvent } from 'react';
 import { useCartStore } from '@/store/cartStore';
 import { getAvailablePickupDates } from '@/lib/pickup';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, CheckCircle2 } from 'lucide-react';
-
-type SquarePayments = any;
-
-declare global {
-  interface Window {
-    SqPaymentForm?: any;
-    Square?: any;
-  }
-}
+import { ArrowLeft } from 'lucide-react';
 
 export default function CheckoutPage() {
-  const { items, clearCart } = useCartStore();
+  const { items } = useCartStore();
   const subtotal = items.reduce((total, item) => total + (item.price * item.quantity), 0);
 
-  const [status, setStatus] = useState<'idle' | 'initializing' | 'submitting' | 'success' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
   const [formData, setFormData] = useState({
@@ -30,14 +21,6 @@ export default function CheckoutPage() {
     pickupDate: '' // YYYY-MM-DD, matches one of pickupAvailability.options
   });
 
-  // Tracks the Square card input lifecycle so the UI never shows a dead,
-  // input-looking box: unconfigured = missing public keys, error = SDK failed.
-  const [cardStatus, setCardStatus] = useState<'loading' | 'ready' | 'unconfigured' | 'error'>('loading');
-  const [cardStatusMessage, setCardStatusMessage] = useState('');
-
-  const cardRef = useRef<any>(null);
-  const paymentsRef = useRef<SquarePayments | null>(null);
-
   const hasItems = items.length > 0;
 
   // Every Friday/Saturday up to 30 days out, governed by the Wednesday 9 PM
@@ -45,95 +28,6 @@ export default function CheckoutPage() {
   // ahead for events instead of only the very next weekend.
   const pickupAvailability = useMemo(() => getAvailablePickupDates(), []);
   const selectedPickupOption = pickupAvailability.options.find((opt) => opt.date === formData.pickupDate);
-
-  useEffect(() => {
-    // The #card-container div only exists while the cart has items, so the
-    // Square card input can only be attached once the form is on screen.
-    if (!hasItems) return;
-
-    const applicationId = process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID;
-    const locationId = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID || process.env.NEXT_PUBLIC_SQUARE_LOCATION;
-    if (!applicationId || !locationId) {
-      setCardStatus('unconfigured');
-      setCardStatusMessage('Online payment is temporarily unavailable. Please contact us to complete your order.');
-      return;
-    }
-
-    let cancelled = false;
-    setCardStatus('loading');
-
-    const init = async () => {
-      try {
-        // @ts-ignore
-        const payments = await window.Square.payments(applicationId, locationId);
-        if (cancelled) return;
-        paymentsRef.current = payments;
-
-        const card = await payments.card();
-        if (cancelled) {
-          card.destroy();
-          return;
-        }
-        cardRef.current = card;
-        await card.attach('#card-container');
-        if (cancelled) {
-          card.destroy();
-          cardRef.current = null;
-          return;
-        }
-        setCardStatus('ready');
-      } catch (err: any) {
-        console.error('Square payments init error', err);
-        if (!cancelled) {
-          setCardStatus('error');
-          setCardStatusMessage('The secure card form failed to load. Please refresh the page or try a different browser.');
-        }
-      }
-    };
-
-    const onScriptError = () => {
-      console.error('Failed to load Square Web Payments SDK');
-      if (!cancelled) {
-        setCardStatus('error');
-        setCardStatusMessage('The secure card form could not be loaded. Please check your connection and refresh the page.');
-      }
-    };
-
-    if (window.Square) {
-      init();
-    } else {
-      // Sandbox application IDs start with "sandbox-"; use the matching SDK
-      // unless the environment is set explicitly.
-      const env = (process.env.NEXT_PUBLIC_SQUARE_ENVIRONMENT || (applicationId.startsWith('sandbox-') ? 'sandbox' : 'production')).toLowerCase();
-      const src = env === 'production' ? 'https://web.squarecdn.com/v1/square.js' : 'https://sandbox.web.squarecdn.com/v1/square.js';
-      let script = document.querySelector<HTMLScriptElement>('script[data-square-sdk]');
-      if (!script) {
-        script = document.createElement('script');
-        script.src = src;
-        script.async = true;
-        script.dataset.squareSdk = 'true';
-        document.head.appendChild(script);
-      }
-      script.addEventListener('load', init);
-      script.addEventListener('error', onScriptError);
-    }
-
-    return () => {
-      cancelled = true;
-      if (cardRef.current) {
-        cardRef.current.destroy();
-        cardRef.current = null;
-      }
-    };
-  }, [hasItems]);
-
-  const tokenizeCard = async () => {
-    if (!cardRef.current) throw new Error('Payment form not initialized');
-    const result = await cardRef.current.tokenize();
-    if (result.status === 'OK' && result.token) return result.token;
-    const errors = result.errors?.map((e: any) => e.message).join(', ') || 'Card tokenization failed';
-    throw new Error(errors);
-  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -143,17 +37,8 @@ export default function CheckoutPage() {
     setErrorMessage('');
 
     try {
-      // Ensure pickup date set
       if (!selectedPickupOption) throw new Error('Please select a pickup date');
 
-      if (cardStatus !== 'ready') {
-        throw new Error(cardStatusMessage || 'The card form is not ready yet. Please wait a moment and try again.');
-      }
-
-      // Tokenize card client-side
-      const sourceId = await tokenizeCard();
-
-      // Build minimal items payload (id + quantity)
       const payloadItems = items.map((it: any) => ({ id: it.id, quantity: it.quantity }));
 
       const payload = {
@@ -165,7 +50,6 @@ export default function CheckoutPage() {
           pickupDay: selectedPickupOption!.day,
         },
         items: payloadItems,
-        sourceId,
       };
 
       const response = await fetch('/api/checkout', {
@@ -176,34 +60,22 @@ export default function CheckoutPage() {
 
       const data = await response.json();
 
-      if (!response.ok || !data?.success) {
-        const err = data?.error || (data?.errors && data.errors.map((e: any) => e.detail || e).join(', ')) || 'Payment failed';
+      if (!response.ok || !data?.success || !data?.checkoutUrl) {
+        const err = data?.error || (data?.errors && data.errors.map((e: any) => e.detail || e).join(', ')) || 'Could not start checkout.';
         throw new Error(err);
       }
 
-      setStatus('success');
-      clearCart();
+      // The cart is intentionally left intact until Square confirms payment
+      // — /checkout/return only shows success and clears state once the
+      // order is actually paid, so an abandoned Square checkout page doesn't
+      // silently lose the customer's cart.
+      window.location.href = data.checkoutUrl;
     } catch (err: any) {
       console.error(err);
       setStatus('error');
       setErrorMessage(err?.message || 'An unexpected error occurred. Please try again.');
     }
   };
-
-  if (status === 'success') {
-    return (
-      <div className="min-h-[80vh] bg-kt-champagne flex flex-col items-center justify-center p-4">
-        <CheckCircle2 className="w-20 h-20 text-kt-emerald mb-6" />
-        <h1 className="font-serif text-4xl font-bold text-kt-chocolate mb-4 text-center">Your Order Is Confirmed</h1>
-        <p className="font-sans text-lg text-kt-chocolate/80 max-w-lg text-center mb-8">
-          Thank you, {formData.name}! Your payment has been received and your order is on the calendar. We&apos;ll see you at pickup &mdash; reach out anytime at info@kingdomtreatzrva.com.
-        </p>
-        <Link href="/" className="px-8 py-4 bg-kt-chocolate text-kt-champagne font-display tracking-wider text-sm uppercase rounded-sm hover:bg-kt-chocolate/90 transition-colors">
-          Home
-        </Link>
-      </div>
-    );
-  }
 
   return (
     <div className="bg-kt-champagne min-h-screen py-16 px-4">
@@ -239,34 +111,34 @@ export default function CheckoutPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block font-display text-xs tracking-wider uppercase mb-2 text-kt-chocolate/80">Full Name *</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         required
                         value={formData.name}
                         onChange={(e) => setFormData({...formData, name: e.target.value})}
-                        className="w-full px-4 py-3 bg-kt-champagne/50 border border-kt-chocolate/20 rounded-sm focus:outline-none focus:border-kt-rouge focus:bg-white transition-colors" 
+                        className="w-full px-4 py-3 bg-kt-champagne/50 border border-kt-chocolate/20 rounded-sm focus:outline-none focus:border-kt-rouge focus:bg-white transition-colors"
                       />
                     </div>
                     <div>
                       <label className="block font-display text-xs tracking-wider uppercase mb-2 text-kt-chocolate/80">Phone Number *</label>
-                      <input 
-                        type="tel" 
+                      <input
+                        type="tel"
                         required
                         value={formData.phone}
                         onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                        className="w-full px-4 py-3 bg-kt-champagne/50 border border-kt-chocolate/20 rounded-sm focus:outline-none focus:border-kt-rouge focus:bg-white transition-colors" 
+                        className="w-full px-4 py-3 bg-kt-champagne/50 border border-kt-chocolate/20 rounded-sm focus:outline-none focus:border-kt-rouge focus:bg-white transition-colors"
                       />
                     </div>
                   </div>
 
                   <div>
                     <label className="block font-display text-xs tracking-wider uppercase mb-2 text-kt-chocolate/80">Email Address *</label>
-                    <input 
-                      type="email" 
+                    <input
+                      type="email"
                       required
                         value={formData.email}
                         onChange={(e) => setFormData({...formData, email: e.target.value})}
-                        className="w-full px-4 py-3 bg-kt-champagne/50 border border-kt-chocolate/20 rounded-sm focus:outline-none focus:border-kt-rouge focus:bg-white transition-colors" 
+                        className="w-full px-4 py-3 bg-kt-champagne/50 border border-kt-chocolate/20 rounded-sm focus:outline-none focus:border-kt-rouge focus:bg-white transition-colors"
                       />
                   </div>
 
@@ -290,18 +162,9 @@ export default function CheckoutPage() {
                   </div>
 
                   <div>
-                    <label className="block font-display text-xs tracking-wider uppercase mb-2 text-kt-chocolate/80">Card Details</label>
-                    <div id="card-container" className={cardStatus === 'ready' ? 'p-4 bg-kt-champagne/50 border border-kt-chocolate/10 rounded-sm' : 'h-0 overflow-hidden'}></div>
-                    {cardStatus === 'loading' && (
-                      <div className="p-4 bg-kt-champagne/50 border border-kt-chocolate/10 rounded-sm font-sans text-sm text-kt-chocolate/60">
-                        Loading secure payment form...
-                      </div>
-                    )}
-                    {(cardStatus === 'unconfigured' || cardStatus === 'error') && (
-                      <div className="p-4 bg-kt-rouge/10 border border-kt-rouge rounded-sm font-sans text-sm text-kt-rouge">
-                        {cardStatusMessage}
-                      </div>
-                    )}
+                    <p className="font-sans text-sm text-kt-chocolate/70">
+                      You&apos;ll enter your card details securely on Square&apos;s payment page in the next step.
+                    </p>
                     <p className="mt-2 font-sans text-xs text-kt-chocolate/60">Payments are processed securely by Square. Card details never touch our servers.</p>
                     <div data-testid="square-approved-badge" className="mt-4 inline-flex items-center">
                       <Image
@@ -318,10 +181,10 @@ export default function CheckoutPage() {
                   <button
                     type="submit"
                     data-testid="checkout-submit-button"
-                    disabled={status === 'submitting' || cardStatus !== 'ready'}
+                    disabled={status === 'submitting'}
                     className="w-full py-4 mt-8 bg-kt-chocolate text-kt-champagne font-display text-sm tracking-wider uppercase rounded-sm hover:bg-kt-chocolate/90 transition-colors disabled:opacity-60"
                   >
-                    {status === 'submitting' ? 'Processing...' : 'Pay'}
+                    {status === 'submitting' ? 'Preparing Checkout...' : 'Continue to Payment'}
                   </button>
                 </form>
               </div>
