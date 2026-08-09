@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "coachingcollection": {
+      "type": "http",
+      "url": "https://mcp.smithery.ai/coachingcollection"
+    }
+  }
+}
