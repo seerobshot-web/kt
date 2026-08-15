@@ -328,8 +328,8 @@ export default function CheckoutPage() {
             </div>
 
             {/* Order Summary Section */}
-            <div className="lg:col-span-1">
-              <div className="bg-kt-chocolate text-kt-champagne p-8 rounded-sm sticky top-40">
+            <div className="lg:col-span-1 order-first lg:order-last">
+              <div className="bg-kt-chocolate text-kt-champagne p-8 rounded-sm sticky top-24 md:top-40">
                 <h2 className="font-serif text-2xl font-bold mb-6 pb-4 border-b border-kt-champagne/20">Order Summary</h2>
 
                 <div className="space-y-4 mb-6 max-h-96 overflow-y-auto pr-2 scrollbar-hide">
